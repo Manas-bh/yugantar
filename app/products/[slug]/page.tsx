@@ -10,6 +10,7 @@ import { normalizeStock } from "@/lib/stock-normalization";
 import { createMetadata } from "@/lib/seo";
 import { ProductImageGallery } from "@/components/product-image-gallery";
 import { SiteHeader } from "@/components/site-header";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -31,10 +32,16 @@ export async function generateMetadata({
     });
   }
 
+  const ogImage = optimizeImageUrl(product.images?.[0] || "", {
+    width: 1200,
+    quality: 70,
+  });
+
   return createMetadata({
     title: `${product.name} - Buy Online`,
     description: product.description,
     path: `/products/${slug}`,
+    images: ogImage ? [ogImage] : undefined,
   });
 }
 
@@ -48,6 +55,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   const images = Array.isArray(product.images) ? product.images : [];
+  const optimizedImages = images.map((img) =>
+    optimizeImageUrl(img, { width: 1400, quality: 68 })
+  );
   const stock = normalizeStock(product.stock, product.sizes || []);
   const defaultSize =
     (product.sizes || []).find((size: string) => (stock[size] || 0) > 0) ||
@@ -75,7 +85,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <section>
             <Card className="surface-card">
               <CardContent className="p-3 sm:p-4">
-                <ProductImageGallery images={images} alt={product.name} />
+                <ProductImageGallery images={optimizedImages} alt={product.name} />
               </CardContent>
             </Card>
           </section>
@@ -124,7 +134,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   productId={String(product._id)}
                   name={product.name}
                   price={Number(product.price)}
-                  image={images[0] || "/placeholder.svg"}
+                  image={optimizedImages[0] || "/placeholder.svg"}
                   sizes={product.sizes || []}
                   defaultSize={defaultSize}
                   colors={

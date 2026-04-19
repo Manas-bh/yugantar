@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AddToCart } from "@/components/add-to-cart";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface ProductCardActionsProps {
   product: {
@@ -37,7 +38,10 @@ export function ProductCardActions({
         productId={product._id}
         name={product.name}
         price={product.price}
-        image={product.images[0] || "/placeholder.svg"}
+        image={optimizeImageUrl(product.images[0] || "/placeholder.svg", {
+          width: 960,
+          quality: 65,
+        })}
         sizes={product.sizes}
         defaultSize={selectedSize || product.sizes[0]}
         defaultColor="Black"

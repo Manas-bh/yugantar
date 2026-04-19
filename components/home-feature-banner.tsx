@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface FeatureBanner {
   id: string;
@@ -27,7 +28,7 @@ interface ApiFeatureBanner {
 
 const FALLBACK_BANNER: FeatureBanner = {
   id: "fallback-feature",
-  src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=2040&auto=format&fit=crop",
+  src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=60&w=1200&auto=format&fit=crop",
   alt: "Centre Stage Collection",
   title: "Centre Stage Collection",
   subtitle: "Curated drops built for bold fits and everyday wear.",
@@ -45,7 +46,7 @@ export function HomeFeatureBanner() {
     const loadFeatureBanner = async () => {
       try {
         const response = await fetch("/api/banners?position=home_feature&limit=1", {
-          cache: "no-store",
+          cache: "force-cache",
           signal: controller.signal,
         });
         if (!response.ok) {
@@ -117,11 +118,11 @@ export function HomeFeatureBanner() {
           <div className="relative md:col-span-5">
             <div className="relative mx-auto aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border border-white/20 bg-white/10">
               <Image
-                src={banner.src}
+                src={optimizeImageUrl(banner.src, { width: 960, quality: 60 })}
                 alt={banner.alt}
                 fill
                 className="object-cover object-top"
-                sizes="(max-width: 768px) 100vw, 33vw"
+                sizes="(max-width: 640px) 92vw, (max-width: 768px) 78vw, 33vw"
               />
             </div>
             <div className="absolute -left-1 -top-1 rounded-full border border-white/30 bg-white/20 px-4 py-2 text-xl font-bold text-white backdrop-blur">

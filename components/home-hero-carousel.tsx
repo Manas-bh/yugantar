@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface HeroSlide {
   id: string;
@@ -38,7 +39,7 @@ interface ApiBanner {
 const FALLBACK_HERO_SLIDES: HeroSlide[] = [
   {
     id: "fallback-1",
-    src: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=80&w=2070&auto=format&fit=crop",
+    src: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?q=65&w=1280&auto=format&fit=crop",
     alt: "Streetwear hero model",
     title: "Till End of the Era",
     subtitle: "Premium oversized streetwear and graphic tees",
@@ -47,7 +48,7 @@ const FALLBACK_HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "fallback-2",
-    src: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=2070&auto=format&fit=crop",
+    src: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=62&w=1280&auto=format&fit=crop",
     alt: "Urban fashion collection",
     title: "Wear Your Story",
     subtitle: "Statement pieces for everyday style",
@@ -56,7 +57,7 @@ const FALLBACK_HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: "fallback-3",
-    src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=2070&auto=format&fit=crop",
+    src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=62&w=1280&auto=format&fit=crop",
     alt: "Premium oversized tee",
     title: "Built For Expression",
     subtitle: "Designs that stand out from the crowd",
@@ -79,7 +80,7 @@ export function HomeHeroCarousel() {
     const loadHeroBanners = async () => {
       try {
         const response = await fetch("/api/banners?position=home_hero", {
-          cache: "no-store",
+          cache: "force-cache",
           signal: controller.signal,
         });
 
@@ -185,12 +186,12 @@ export function HomeHeroCarousel() {
             <CarouselItem key={slide.id} className="pl-0">
               <div className="grid min-h-[520px] w-full grid-cols-1 bg-card lg:min-h-[560px] lg:grid-cols-12">
                 <div className="relative order-1 min-h-[280px] overflow-hidden lg:order-2 lg:col-span-7 lg:min-h-[560px]">
-                  <Image
-                    src={slide.src}
+                    <Image
+                    src={optimizeImageUrl(slide.src, { width: 1400, quality: 62 })}
                     alt={slide.alt}
                     fill
                     className="object-cover object-center"
-                    sizes="(max-width: 1024px) 100vw, 58vw"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 55vw, 58vw"
                     priority={index === 0}
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/5 to-transparent lg:bg-gradient-to-l lg:from-black/15 lg:via-transparent lg:to-transparent" />

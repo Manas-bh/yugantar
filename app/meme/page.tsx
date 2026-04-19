@@ -18,6 +18,7 @@ import { normalizeStock, getTotalStock } from "@/lib/stock-normalization";
 import { CategoryHeroBanner } from "@/components/category-hero-banner";
 import { ProductCardActions } from "@/components/product-card-actions";
 import { SiteHeader } from "@/components/site-header";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface Product {
   _id: string;
@@ -41,7 +42,7 @@ interface Product {
 }
 
 const MEME_HERO_FALLBACK = {
-  src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=2070&auto=format&fit=crop",
+  src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=62&w=1280&auto=format&fit=crop",
   alt: "Meme hero banner",
   title: "Meme Collection",
   subtitle:
@@ -67,12 +68,9 @@ export default function MemePage() {
       try {
         setLoading(true);
         const response = await fetch(
-          `/api/products?category=meme&isActive=true&_t=${Date.now()}`,
+          "/api/products?category=meme&isActive=true",
           {
-            cache: "no-store",
-            headers: {
-              "Cache-Control": "no-cache",
-            },
+            cache: "force-cache",
             signal: controller.signal,
           }
         );
@@ -113,17 +111,7 @@ export default function MemePage() {
 
     fetchMemeProducts();
 
-    // Refresh when page becomes visible again
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchMemeProducts();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       controller.abort();
     };
   }, []);
@@ -283,12 +271,20 @@ export default function MemePage() {
                       }`}
                     >
                       <Image
-                        src={product.images[0] || "/placeholder.svg"}
+                        src={optimizeImageUrl(
+                          product.images[0] || "/placeholder.svg",
+                          { width: 960, quality: 65 }
+                        )}
                         alt={product.name}
                         fill
                         className={`object-cover transition-transform duration-300 ${
                           viewMode === "list" ? "rounded-l-3xl" : "rounded-t-3xl"
                         }`}
+                        sizes={
+                          viewMode === "list"
+                            ? "192px"
+                            : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        }
                       />
                       {badge && (
                         <Badge className="absolute left-3 top-3 rounded-full bg-[hsl(var(--surface-3))] px-3 py-1 text-[11px] font-semibold text-[hsl(var(--surface-3-foreground))] hover:bg-[hsl(var(--surface-3))]">

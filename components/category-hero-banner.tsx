@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 type CategoryHeroPosition = "collections_hero" | "anime_hero" | "meme_hero";
 
@@ -63,7 +64,7 @@ export function CategoryHeroBanner({
     const loadBanner = async () => {
       try {
         const response = await fetch(`/api/banners?position=${position}&limit=1`, {
-          cache: "no-store",
+          cache: "force-cache",
           signal: controller.signal,
         });
 
@@ -116,11 +117,11 @@ export function CategoryHeroBanner({
         <div className="grid min-h-[340px] grid-cols-1 md:min-h-[420px] md:grid-cols-12">
           <div className="relative order-2 min-h-[220px] md:order-1 md:col-span-7 md:min-h-[420px]">
             <Image
-              src={banner.src}
+              src={optimizeImageUrl(banner.src, { width: 1400, quality: 62 })}
               alt={banner.alt}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, 58vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 55vw, 58vw"
               priority={priority}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/10 to-transparent" />

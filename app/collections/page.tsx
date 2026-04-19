@@ -18,6 +18,7 @@ import { normalizeStock, getTotalStock } from "@/lib/stock-normalization";
 import { CategoryHeroBanner } from "@/components/category-hero-banner";
 import { ProductCardActions } from "@/components/product-card-actions";
 import { SiteHeader } from "@/components/site-header";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface Product {
   _id: string;
@@ -41,7 +42,7 @@ interface Product {
 }
 
 const COLLECTIONS_HERO_FALLBACK = {
-  src: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
+  src: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=62&w=1280&auto=format&fit=crop",
   alt: "Collections hero banner",
   title: "Curated Collections",
   subtitle:
@@ -257,12 +258,20 @@ export default function CollectionsPage() {
                       }`}
                     >
                       <Image
-                        src={product.images[0] || "/placeholder.svg"}
+                        src={optimizeImageUrl(
+                          product.images[0] || "/placeholder.svg",
+                          { width: 960, quality: 65 }
+                        )}
                         alt={product.name}
                         fill
                         className={`object-cover transition-transform duration-300 ${
                           viewMode === "list" ? "rounded-l-3xl" : "rounded-t-3xl"
                         }`}
+                        sizes={
+                          viewMode === "list"
+                            ? "192px"
+                            : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        }
                       />
                       {badge && (
                         <Badge className="absolute left-3 top-3 rounded-full bg-[hsl(var(--surface-3))] px-3 py-1 text-[11px] font-semibold text-[hsl(var(--surface-3-foreground))] hover:bg-[hsl(var(--surface-3))]">

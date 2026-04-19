@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/carousel";
 import { getTotalStock, normalizeStock } from "@/lib/stock-normalization";
 import { ProductCardActions } from "@/components/product-card-actions";
+import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface ApiProduct {
   _id: string;
@@ -47,11 +48,8 @@ export function DynamicFeaturedProducts() {
 
   const loadProducts = async (signal?: AbortSignal) => {
     try {
-      const response = await fetch(`/api/products?isFeatured=true&_t=${Date.now()}`, {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-cache",
-        },
+      const response = await fetch("/api/products?isFeatured=true", {
+        cache: "force-cache",
         signal,
       });
 
@@ -95,16 +93,7 @@ export function DynamicFeaturedProducts() {
     const controller = new AbortController();
     loadProducts(controller.signal);
 
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadProducts(controller.signal);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       controller.abort();
     };
   }, []);
@@ -175,14 +164,15 @@ export function DynamicFeaturedProducts() {
                   <CardContent className="flex h-full flex-col p-0">
                     <div className="relative aspect-[4/5] w-full bg-[hsl(var(--surface-1))]">
                       <Image
-                        src={
+                        src={optimizeImageUrl(
                           product.images[0] ||
-                          "/placeholder.svg?height=400&width=400"
-                        }
+                            "/placeholder.svg?height=400&width=400",
+                          { width: 960, quality: 65 }
+                        )}
                         alt={product.name}
                         fill
                         className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.03]"
-                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                        sizes="(max-width: 640px) 82vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                       />
                       {badge && (
                         <Badge className="absolute left-3 top-3 rounded-full bg-[hsl(var(--surface-3))] px-3 py-1 text-[11px] font-semibold text-[hsl(var(--surface-3-foreground))] hover:bg-[hsl(var(--surface-3))]">
