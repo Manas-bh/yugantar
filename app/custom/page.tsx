@@ -6,7 +6,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, X, RotateCcw } from "lucide-react";
+import { Shirt, Upload, X, RotateCcw } from "lucide-react";
 import Image from "next/image";
 
 import Link from "next/link";
@@ -293,10 +293,9 @@ export default function CustomPage() {
                   {/* T-Shirt Base */}
                   <div className="relative aspect-[4/5] mx-auto">
                     <div className="tshirt-icon-container relative w-full h-full flex items-center justify-center">
-                      <i
-                        className="fas fa-tshirt tshirt-icon"
+                      <Shirt
+                        className="h-[clamp(220px,72vw,320px)] w-[clamp(220px,72vw,320px)]"
                         style={{
-                          fontSize: "clamp(220px, 72vw, 320px)",
                           color:
                             selectedColor === "white"
                               ? "#ffffff"
@@ -314,9 +313,8 @@ export default function CustomPage() {
                               ? "drop-shadow(0 0 0 1px rgba(0,0,0,0.1))"
                               : ""
                           }`,
-                          WebkitTextStroke:
-                            selectedColor === "white" ? "1px #e5e7eb" : "none",
                         }}
+                        strokeWidth={1.5}
                       />
 
                       {/* Design Area Overlay */}
