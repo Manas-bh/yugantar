@@ -38,13 +38,15 @@ export async function findUserByEmail(email: string): Promise<IUser | null> {
     .from(USERS_TABLE)
     .select("*")
     .eq("email", email)
-    .maybeSingle<UserRecord>();
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .returns<UserRecord[]>();
 
   if (error) {
     throw error;
   }
 
-  return data ? mapUserRecordToIUser(data) : null;
+  return data?.[0] ? mapUserRecordToIUser(data[0]) : null;
 }
 
 export async function createUserRecord(input: {
@@ -98,8 +100,42 @@ export async function ensureDefaultAdminUser(input: {
   name: string;
   passwordHash: string;
 }): Promise<void> {
-  const existing = await findUserByEmail(input.email);
-  if (existing) {
+  if (!process.env.SUPABASE_URL) {
+    throw new SupabaseConfigError();
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const payload = {
+    email: input.email,
+    name: input.name,
+    password: input.passwordHash,
+    role: "admin" as UserRole,
+    provider: "email" as AuthProvider,
+    is_email_verified: true,
+    last_login_at: new Date().toISOString(),
+  };
+
+  const { data: existingUsers, error: lookupError } = await supabase
+    .from(USERS_TABLE)
+    .select("id")
+    .eq("email", input.email)
+    .limit(1)
+    .returns<Array<{ id: string }>>();
+
+  if (lookupError) {
+    throw lookupError;
+  }
+
+  if (existingUsers && existingUsers.length > 0) {
+    const { error: updateError } = await supabase
+      .from(USERS_TABLE)
+      .update(payload)
+      .eq("email", input.email);
+
+    if (updateError) {
+      throw updateError;
+    }
+
     return;
   }
 

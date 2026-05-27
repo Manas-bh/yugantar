@@ -94,8 +94,10 @@ export function DynamicNavbar({ currentPath = "" }: DynamicNavbarProps) {
     )
     .sort((a, b) => a.order - b.order);
 
-  // If 'collections' is missing, add it from defaults
-  if (!activeCategories.find((cat) => cat.id === "collections")) {
+  // If 'collections' is missing, add it from defaults (check both id and slug to prevent duplicates)
+  if (
+    !activeCategories.find((cat) => cat.id === "collections" || cat.slug === "collections")
+  ) {
     activeCategories = [
       {
         id: "collections",

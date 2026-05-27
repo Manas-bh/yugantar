@@ -10,6 +10,9 @@ if (!jwtSecretValue || jwtSecretValue.length < 32) {
 }
 
 const JWT_SECRET = new TextEncoder().encode(jwtSecretValue);
+const DEFAULT_ADMIN_EMAIL = (process.env.DEFAULT_ADMIN_EMAIL || "admin@yugantar.studio")
+  .trim()
+  .toLowerCase();
 
 // List of protected routes (add more as needed)
 const protectedRoutes = ["/admin", "/profile", "/address", "/checkout"];
@@ -35,7 +38,9 @@ export async function middleware(request: NextRequest) {
       try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
 
-        if (payload.role !== "admin") {
+        const tokenEmail = String(payload.email || "").trim().toLowerCase();
+
+        if (payload.role !== "admin" && tokenEmail !== DEFAULT_ADMIN_EMAIL) {
           const callbackUrl = encodeURIComponent(sanitizeCallbackUrl(pathname));
           return NextResponse.redirect(
             new URL(`/auth?callbackUrl=${callbackUrl}`, request.url)

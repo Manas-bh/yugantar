@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const callbackUrl = searchParams.get("callbackUrl") || undefined;
-    const origin = request.nextUrl.origin;
-    const redirectUri = `${origin}/api/auth/callback/google`;
+    const redirectUri =
+      process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI ||
+      `${request.nextUrl.origin}/api/auth/callback/google`;
     const url = getGoogleOAuthURL(callbackUrl, redirectUri);
 
     return NextResponse.json({ success: true, url });

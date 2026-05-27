@@ -109,7 +109,7 @@ export function CategoryHeroBanner({
       isMounted = false;
       controller.abort();
     };
-  }, [position, fallback]);
+  }, [position, fallback.src, fallback.alt, fallback.title, fallback.subtitle, fallback.ctaText, fallback.linkUrl]);
 
   return (
     <section className={cn("app-shell py-6 sm:py-8", className)}>

@@ -29,9 +29,26 @@ export async function upsertAuthEmailOtp(
     last_sent_at: new Date().toISOString(),
   };
 
+  const existing = await findAuthEmailOtpByEmail(input.email);
+
+  if (existing) {
+    const { data, error } = await supabase
+      .from(AUTH_EMAIL_OTPS_TABLE)
+      .update(payload)
+      .eq("id", existing.id)
+      .select("*")
+      .single<AuthEmailOtpRecord>();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
   const { data, error } = await supabase
     .from(AUTH_EMAIL_OTPS_TABLE)
-    .upsert(payload, { onConflict: "email" })
+    .insert(payload)
     .select("*")
     .single<AuthEmailOtpRecord>();
 
@@ -54,13 +71,15 @@ export async function findAuthEmailOtpByEmail(
     .from(AUTH_EMAIL_OTPS_TABLE)
     .select("*")
     .eq("email", email)
-    .maybeSingle<AuthEmailOtpRecord>();
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .returns<AuthEmailOtpRecord[]>();
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return data?.[0] || null;
 }
 
 export async function incrementAuthEmailOtpAttemptById(

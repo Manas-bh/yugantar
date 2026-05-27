@@ -44,8 +44,8 @@ export function ProductCardActions({
         })}
         sizes={product.sizes}
         defaultSize={selectedSize || product.sizes[0]}
-        defaultColor="Black"
-        colors={product.category.includes("custom") ? product.colors : ["Black"]}
+        defaultColor={product.colors?.[0] || "Black"}
+        colors={product.category.includes("custom") ? (product.colors || []) : [product.colors?.[0] || "Black"]}
         stock={normalizedStock}
         category={product.category.join(", ")}
         variant="default"

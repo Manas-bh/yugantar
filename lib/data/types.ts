@@ -14,7 +14,7 @@ export interface UserRecord {
   id: string;
   email: string;
   name: string;
-  password_hash: string | null;
+  password: string | null;
   picture: string | null;
   role: UserRole;
   provider: AuthProvider;

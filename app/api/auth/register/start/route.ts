@@ -56,6 +56,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Enforce password complexity: at least one uppercase, one lowercase, one digit, one special character
+    const passwordComplexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~])/;
+    if (!passwordComplexityRegex.test(rawPassword)) {
+      return NextResponse.json(
+        { error: "Password must include uppercase, lowercase, number, and special character" },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await getUserByEmail(normalizedEmail);
     if (existingUser) {
       return NextResponse.json(

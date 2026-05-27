@@ -192,7 +192,7 @@ export function SignupForm({ onToggleForm }: SignupFormProps) {
 
   const handleGoogleSignup = async () => {
     try {
-      const response = await fetch("/api/auth/google/url");
+      const response = await fetch(`/api/auth/google/url?callbackUrl=${encodeURIComponent("/")}`);
       const data = await response.json();
 
       if (!response.ok || !data?.success || !data?.url) {

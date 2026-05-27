@@ -23,6 +23,21 @@ function getStockValue(stock: any, size: string): number {
 }
 
 /**
+ * Safely converts stock (which might be a Map or plain object) to a plain Record.
+ */
+function safeStockToRecord(stock: any): Record<string, number> {
+  if (!stock) return {};
+  if (stock instanceof Map || (stock && typeof stock.get === "function")) {
+    const record: Record<string, number> = {};
+    stock.forEach((value: number, key: string) => {
+      record[key] = value;
+    });
+    return record;
+  }
+  return { ...stock } as Record<string, number>;
+}
+
+/**
  * Validates if sufficient stock exists for order items
  * @param items - Array of order items to validate
  * @returns Promise<{ valid: boolean, outOfStockItems: { productId: string, size: string, requestedQty: number, availableQty: number }[] }>
@@ -114,7 +129,7 @@ export async function reduceStock(items: IOrderItem[]): Promise<{
       }
 
       const nextProductStock = {
-        ...(product.stock as Record<string, number>),
+        ...safeStockToRecord(product.stock),
         [item.size]: nextStock,
       };
 
@@ -163,7 +178,7 @@ export async function restoreStock(items: IOrderItem[]): Promise<{
       const nextStock = currentStock + item.quantity;
 
       const nextProductStock = {
-        ...(product.stock as Record<string, number>),
+        ...safeStockToRecord(product.stock),
         [item.size]: nextStock,
       };
 

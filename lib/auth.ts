@@ -20,6 +20,9 @@ if (!jwtSecretValue || jwtSecretValue.length < 32) {
 
 const JWT_SECRET = new TextEncoder().encode(jwtSecretValue);
 
+/** Track whether the default admin has already been seeded this process. */
+let adminInitialized = false;
+
 export interface JWTPayload {
   userId: string;
   email: string;
@@ -53,12 +56,22 @@ export async function verifyJWT(token: string): Promise<JWTPayload> {
 
 // Hash password
 export async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 12);
+  try {
+    return await bcrypt.hash(password, 12);
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    throw new Error("Failed to hash password");
+  }
 }
 
 // Verify password
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return await bcrypt.compare(password, hashedPassword);
+  try {
+    return await bcrypt.compare(password, hashedPassword);
+  } catch (error) {
+    console.error("Error verifying password:", error);
+    return false;
+  }
 }
 
 // Get user by ID
@@ -135,9 +148,21 @@ export async function updateUserLastLogin(userId: string): Promise<void> {
 export async function authenticateUser(email: string, password: string): Promise<IUser | null> {
   try {
     const normalizedEmail = sanitizeEmail(email);
+    const defaultAdminEmail = sanitizeEmail(
+      process.env.DEFAULT_ADMIN_EMAIL || "admin@yugantar.studio"
+    );
+
+    // Seed the default admin once per process, not on every login attempt.
+    if (!adminInitialized && defaultAdminEmail && normalizedEmail === defaultAdminEmail) {
+      await initializeDefaultAdmin();
+      // adminInitialized is set inside initializeDefaultAdmin on success
+    }
+
     const user = await findUserByEmail(normalizedEmail);
 
     if (!user || user.provider !== "email" || !user.password) {
+      // Constant-time delay to mitigate user enumeration via timing attack
+      await bcrypt.compare(password, "$2a$12$invalidhashfortimingatk.padding000000000000000000000");
       return null;
     }
 
@@ -198,6 +223,7 @@ export async function initializeDefaultAdmin(): Promise<void> {
       passwordHash: hashedPassword,
     });
 
+    adminInitialized = true;
     console.log("✅ Default admin user checked/created");
   } catch (error) {
     if (error instanceof SupabaseConfigError) {

@@ -28,14 +28,13 @@ export function useStockCheck(
       setError(null);
 
       try {
-        const response = await fetch(
-          `/api/products/stock?productId=${encodeURIComponent(
-            productId
-          )}&size=${encodeURIComponent(size)}`,
-          {
-            signal: controller.signal,
-          }
-        );
+        const url = new URL("/api/products/stock", window.location.origin);
+        url.searchParams.set("productId", productId);
+        url.searchParams.set("size", size);
+
+        const response = await fetch(url.toString(), {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -51,10 +50,14 @@ export function useStockCheck(
           setStock(data.stock);
         } else {
           setError(data.error || "Failed to check stock");
-          setStock(0);
+          setStock(-1); // Use -1 to indicate an error state vs 0 (actually out of stock)
         }
-      } catch (err) {
-        if ((err as Error)?.name === "AbortError") {
+      } catch (err: unknown) {
+        // Safely check for AbortError without assuming Error instance
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+        if (err instanceof Error && err.name === "AbortError") {
           return;
         }
 
@@ -62,8 +65,10 @@ export function useStockCheck(
           return;
         }
 
-        setError(err instanceof Error ? err.message : "Failed to check stock");
-        setStock(0);
+        const message =
+          err instanceof Error ? err.message : "Failed to check stock";
+        setError(message);
+        setStock(-1); // Use -1 to indicate error state
       } finally {
         if (isMounted) {
           setIsLoading(false);

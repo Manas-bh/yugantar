@@ -15,5 +15,7 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return !!isMobile
+  // Return false instead of !!undefined to avoid initial flicker
+  // Components should handle the undefined → boolean transition gracefully
+  return isMobile ?? false
 }

@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       await deleteAuthEmailOtpById(pending.id);
       return NextResponse.json(
         { error: "OTP has expired. Please request a new code." },
-        { status: 410 }
+        { status: 400 }
       );
     }
 
@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
       password: pending.password_hash,
       provider: "email",
       role: "user",
+      isEmailVerified: true,
     });
 
     await deleteAuthEmailOtpById(pending.id);

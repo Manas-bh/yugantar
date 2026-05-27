@@ -11,8 +11,11 @@ import type {
   OrderPaymentRecord,
 } from "@/lib/data/types";
 
-function toDate(value: string | null | undefined): Date {
-  return value ? new Date(value) : new Date();
+function toDate(value: string | null | undefined): Date | undefined {
+  if (value === null || value === undefined) return undefined;
+  const parsed = new Date(value);
+  // Guard against Invalid Date
+  return isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
 export function mapUserRecordToIUser(record: UserRecord): IUser {
@@ -20,14 +23,14 @@ export function mapUserRecordToIUser(record: UserRecord): IUser {
     _id: record.id,
     email: record.email,
     name: record.name,
-    password: record.password_hash || undefined,
+    password: record.password || undefined,
     picture: record.picture || undefined,
     role: record.role,
     provider: record.provider,
     googleId: record.google_id || undefined,
     isEmailVerified: record.is_email_verified,
-    createdAt: toDate(record.created_at),
-    updatedAt: toDate(record.updated_at),
+    createdAt: toDate(record.created_at) ?? new Date(),
+    updatedAt: toDate(record.updated_at) ?? new Date(),
     lastLoginAt: toDate(record.last_login_at),
   } as IUser;
 }
@@ -45,22 +48,27 @@ export function mapIUserCreateToUserInsert(input: {
   return {
     email: input.email,
     name: input.name,
-    password_hash: input.password || null,
+    password: input.password || null,
     picture: input.picture || null,
     role: input.role || "user",
     provider: input.provider,
     google_id: input.googleId || null,
-    is_email_verified: Boolean(input.isEmailVerified),
+    is_email_verified: input.isEmailVerified ?? false,
     last_login_at: new Date().toISOString(),
   };
 }
 
 export function mapOrderRecordToIOrder(record: OrderRecord): IOrder {
+  // Safely validate items array before casting
+  const items: IOrderItem[] = Array.isArray(record.items)
+    ? (record.items as IOrderItem[])
+    : [];
+
   return {
     _id: record.id,
     userId: record.user_id,
     orderId: record.order_id,
-    items: (record.items || []) as IOrderItem[],
+    items,
     address: record.address,
     payment: record.payment,
     orderStatus: record.order_status,
@@ -70,8 +78,8 @@ export function mapOrderRecordToIOrder(record: OrderRecord): IOrder {
     total: record.total,
     cancelReason: record.cancel_reason || undefined,
     cancelledAt: record.cancelled_at ? new Date(record.cancelled_at) : undefined,
-    createdAt: toDate(record.created_at),
-    updatedAt: toDate(record.updated_at),
+    createdAt: toDate(record.created_at) ?? new Date(),
+    updatedAt: toDate(record.updated_at) ?? new Date(),
   } as IOrder;
 }
 
@@ -122,8 +130,8 @@ export function mapProductRecordToIProduct(record: ProductRecord): IProduct {
     isFeatured: record.is_featured,
     rating: record.rating,
     reviews: record.reviews,
-    createdAt: toDate(record.created_at),
-    updatedAt: toDate(record.updated_at),
+    createdAt: toDate(record.created_at) ?? new Date(),
+    updatedAt: toDate(record.updated_at) ?? new Date(),
   } as IProduct;
 }
 
