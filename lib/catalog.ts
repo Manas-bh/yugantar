@@ -5,6 +5,11 @@ export interface Category {
   description: string;
   isActive: boolean;
   order: number;
+  bannerImage?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerCtaText?: string;
+  bannerLinkUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }

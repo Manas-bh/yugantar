@@ -70,6 +70,11 @@ export default function AdminCatalogPage() {
     description: "",
     isActive: true,
     order: 1,
+    bannerImage: "",
+    bannerTitle: "",
+    bannerSubtitle: "",
+    bannerCtaText: "",
+    bannerLinkUrl: "",
   });
 
   const [productForm, setProductForm] = useState({
@@ -302,6 +307,11 @@ export default function AdminCatalogPage() {
       description: "",
       isActive: true,
       order: categories.length + 1,
+      bannerImage: "",
+      bannerTitle: "",
+      bannerSubtitle: "",
+      bannerCtaText: "",
+      bannerLinkUrl: "",
     });
   };
 
@@ -331,6 +341,11 @@ export default function AdminCatalogPage() {
       description: category.description,
       isActive: category.isActive,
       order: category.order,
+      bannerImage: category.bannerImage || "",
+      bannerTitle: category.bannerTitle || "",
+      bannerSubtitle: category.bannerSubtitle || "",
+      bannerCtaText: category.bannerCtaText || "",
+      bannerLinkUrl: category.bannerLinkUrl || "",
     });
     setCategoryDialog(true);
   };
@@ -513,6 +528,83 @@ export default function AdminCatalogPage() {
                           }
                         />
                         <Label htmlFor="isActive">Active</Label>
+                      </div>
+                      <div className="border-t pt-4 mt-4">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                          Banner Settings
+                        </h4>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="bannerImage">Banner Image URL</Label>
+                            <Input
+                              id="bannerImage"
+                              value={categoryForm.bannerImage}
+                              onChange={(e) =>
+                                setCategoryForm({
+                                  ...categoryForm,
+                                  bannerImage: e.target.value,
+                                })
+                              }
+                              placeholder="https://example.com/banner.jpg"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="bannerTitle">Banner Title</Label>
+                            <Input
+                              id="bannerTitle"
+                              value={categoryForm.bannerTitle}
+                              onChange={(e) =>
+                                setCategoryForm({
+                                  ...categoryForm,
+                                  bannerTitle: e.target.value,
+                                })
+                              }
+                              placeholder="Hero headline"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="bannerSubtitle">Banner Subtitle</Label>
+                            <Textarea
+                              id="bannerSubtitle"
+                              value={categoryForm.bannerSubtitle}
+                              onChange={(e) =>
+                                setCategoryForm({
+                                  ...categoryForm,
+                                  bannerSubtitle: e.target.value,
+                                })
+                              }
+                              placeholder="Short description"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="bannerCtaText">CTA Text</Label>
+                            <Input
+                              id="bannerCtaText"
+                              value={categoryForm.bannerCtaText}
+                              onChange={(e) =>
+                                setCategoryForm({
+                                  ...categoryForm,
+                                  bannerCtaText: e.target.value,
+                                })
+                              }
+                              placeholder="Shop Now"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="bannerLinkUrl">Link URL</Label>
+                            <Input
+                              id="bannerLinkUrl"
+                              value={categoryForm.bannerLinkUrl}
+                              onChange={(e) =>
+                                setCategoryForm({
+                                  ...categoryForm,
+                                  bannerLinkUrl: e.target.value,
+                                })
+                              }
+                              placeholder="/collections"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <DialogFooter>

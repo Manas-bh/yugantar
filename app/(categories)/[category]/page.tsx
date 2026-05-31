@@ -4,7 +4,7 @@ import { notFound, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CategoryPageLayout } from "@/components/category-page-layout";
 import { type Product } from "@/lib/types";
-import { getCategories } from "@/lib/catalog";
+import { getCategories, type Category } from "@/lib/catalog";
 
 const DYNAMIC_HERO_FALLBACK = {
   src: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=62&w=1280&auto=format&fit=crop",
@@ -21,6 +21,11 @@ interface CategoryInfo {
   name: string;
   slug: string;
   description: string;
+  bannerImage?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerCtaText?: string;
+  bannerLinkUrl?: string;
 }
 
 export default function DynamicCategoryPage() {
@@ -49,6 +54,11 @@ export default function DynamicCategoryPage() {
             name: localCategory.name,
             slug: localCategory.slug,
             description: localCategory.description || `Browse our ${localCategory.name} collection`,
+            bannerImage: localCategory.bannerImage,
+            bannerTitle: localCategory.bannerTitle,
+            bannerSubtitle: localCategory.bannerSubtitle,
+            bannerCtaText: localCategory.bannerCtaText,
+            bannerLinkUrl: localCategory.bannerLinkUrl,
           });
           setLoading(false);
           return;
@@ -68,7 +78,10 @@ export default function DynamicCategoryPage() {
           );
           
           if (category) {
-            setCategoryInfo(category);
+            setCategoryInfo({
+              ...category,
+              description: category.description || `Browse our ${category.name} collection`,
+            });
           } else {
             // Category doesn't exist in Supabase either - try products API
             const productsResponse = await fetch(
@@ -134,14 +147,15 @@ export default function DynamicCategoryPage() {
   // Custom hero fallback based on category
   const heroFallback = categoryInfo
     ? {
-        src: DYNAMIC_HERO_FALLBACK.src,
+        src: categoryInfo.bannerImage || DYNAMIC_HERO_FALLBACK.src,
         alt: `${categoryInfo.name} hero banner`,
-        title: `${categoryInfo.name} Collection`,
+        title: categoryInfo.bannerTitle || `${categoryInfo.name} Collection`,
         subtitle:
+          categoryInfo.bannerSubtitle ||
           categoryInfo.description ||
           `Explore our amazing ${categoryInfo.name} designs.`,
-        ctaText: `Explore ${categoryInfo.name}`,
-        linkUrl: `/${categorySlug}`,
+        ctaText: categoryInfo.bannerCtaText || `Explore ${categoryInfo.name}`,
+        linkUrl: categoryInfo.bannerLinkUrl || `/${categorySlug}`,
       }
     : DYNAMIC_HERO_FALLBACK;
 

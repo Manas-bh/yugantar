@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { optimizeImageUrl } from "@/lib/image-optimization";
 
-type CategoryHeroPosition = "collections_hero" | "anime_hero" | "meme_hero";
+export type CategoryHeroPosition = "collections_hero" | "anime_hero" | "meme_hero";
 
 interface CategoryHeroBannerProps {
   position: CategoryHeroPosition;
