@@ -30,7 +30,7 @@ export function SiteHeader() {
 
   return (
     <header className="app-shell sticky top-0 z-50">
-      <div className="section-shell overflow-hidden bg-card/95 backdrop-blur">
+      <div className="section-shell overflow-hidden bg-background/95 backdrop-blur">
         <div className="flex h-16 items-center justify-between px-3 sm:h-[74px] sm:px-5">
           <div className="flex min-w-0 flex-1 items-center">
             {!hideNav && <DynamicNavbar currentPath={pathname} />}
