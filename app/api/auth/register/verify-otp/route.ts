@@ -4,6 +4,9 @@ import { getAuthCookieOptions } from "@/lib/security/cookies";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { sanitizeEmail } from "@/lib/security/validation";
 import { hashOtp, isValidOtpFormat } from "@/lib/auth-otp";
+import { logger } from "@/lib/logger";
+import { validateBody } from "@/lib/validation/api";
+import { otpVerifyBodySchema } from "@/lib/validation/schemas";
 import {
   deleteAuthEmailOtpById,
   findAuthEmailOtpByEmail,
@@ -19,12 +22,16 @@ function getClientIp(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, otp } = await request.json();
+    const { data: body, error: validationError } = await validateBody(request, otpVerifyBodySchema);
+    if (validationError) {
+      return validationError;
+    }
+    const { email, otp } = body;
     const normalizedEmail = sanitizeEmail(email);
     const otpValue = String(otp || "").trim();
     const clientIp = getClientIp(request);
 
-    const verifyRateLimit = checkRateLimit(`auth:register:verify:${clientIp}:${normalizedEmail}`, {
+    const verifyRateLimit = await checkRateLimit(`auth:register:verify:${clientIp}:${normalizedEmail}`, {
       limit: 10,
       windowMs: 15 * 60 * 1000,
     });
@@ -121,7 +128,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("Verify OTP error:", error);
+    logger.error("Verify OTP error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

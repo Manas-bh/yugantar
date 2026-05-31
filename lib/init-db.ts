@@ -1,4 +1,5 @@
 import { initializeDefaultAdmin as initializeAuthAdmin } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import {
   createCategoryRecord,
   listCategories,
@@ -12,16 +13,16 @@ import { ensureDefaultProducts } from "@/lib/data/legacy-products";
 
 export async function initializeDatabase() {
   try {
-    console.log("🔄 Initializing Supabase database...");
+    logger.info("🔄 Initializing Supabase database...");
 
     await initializeAuthAdmin();
     await initializeDefaultCategories();
     await initializeDefaultBanners();
     await ensureDefaultProducts();
 
-    console.log("✅ Supabase database initialized successfully");
+    logger.info("✅ Supabase database initialized successfully");
   } catch (error) {
-    console.error("❌ Supabase database initialization failed:", error);
+    logger.error("❌ Supabase database initialization failed:", error);
     throw error;
   }
 }
@@ -132,7 +133,7 @@ async function initializeDefaultBanners() {
 
     if (!exists) {
       await createBannerRecord(bannerData);
-      console.log(`✅ Created banner: ${bannerData.name}`);
+      logger.info(`✅ Created banner: ${bannerData.name}`);
     }
   }
 }
@@ -179,7 +180,7 @@ async function initializeDefaultCategories() {
     const exists = existing.find((category) => category.slug === categoryData.slug);
     if (!exists) {
       await createCategoryRecord(categoryData);
-      console.log(`✅ Created category: ${categoryData.name}`);
+      logger.info(`✅ Created category: ${categoryData.name}`);
     }
   }
 }

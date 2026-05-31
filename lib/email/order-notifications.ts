@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { logger } from "@/lib/logger";
 
 const RESEND_PLACEHOLDER_KEY = "re_xxxxxxxxx";
 const DEFAULT_FROM_EMAIL = "onboarding@resend.dev";
@@ -44,7 +45,7 @@ function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY || RESEND_PLACEHOLDER_KEY;
 
   if (!apiKey || apiKey === RESEND_PLACEHOLDER_KEY) {
-    console.warn(
+    logger.warn(
       "Resend email skipped: replace RESEND_API_KEY placeholder re_xxxxxxxxx"
     );
     return null;

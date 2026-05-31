@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/security/auth-guards";
 import { listProducts, updateProductById } from "@/lib/data/products";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const products = await listProducts();
 
-    console.log(
+    logger.info(
       `Found ${products.length} products with string categories to migrate`
     );
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
           category: categoryArray,
         });
 
-        console.log(
+        logger.info(
           `Migrated product "${product.name}" - category reset to [${categoryArray.join(
             ", "
           )}]`
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       totalChecked: products.length,
     });
   } catch (error) {
-    console.error("Error migrating categories:", error);
+    logger.error("Error migrating categories:", error);
     return NextResponse.json(
       { error: "Failed to migrate categories" },
       { status: 500 }

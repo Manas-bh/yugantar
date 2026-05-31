@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { restoreStock } from "@/lib/stock-utils";
 import { getUserById } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import {
   requireAdminUser,
   requireAuthenticatedUser,
@@ -43,11 +44,9 @@ export async function GET(request: NextRequest) {
 
     let orders;
     if (isAdmin) {
-      if (auth.user.role !== "admin") {
-        return NextResponse.json(
-          { success: false, error: "Admin access required" },
-          { status: 403 }
-        );
+      const adminAuth = await requireAdminUser(request);
+      if (adminAuth.error) {
+        return adminAuth.error;
       }
 
       orders = await findAllOrders();
@@ -69,7 +68,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ success: true, orders: [] });
     }
-    console.error("Error fetching orders:", error);
+    logger.error("Error fetching orders:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch orders" },
       { status: 500 }
@@ -159,7 +158,7 @@ export async function PUT(request: NextRequest) {
         stockErrors = stockRestoration.errors;
 
         if (!stockRestoration.success) {
-          console.error("Stock restoration errors:", stockRestoration.errors);
+          logger.error("Stock restoration errors:", stockRestoration.errors);
         }
       }
 
@@ -205,7 +204,7 @@ export async function PUT(request: NextRequest) {
           });
         }
       } catch (emailError) {
-        console.error(
+        logger.error(
           `Order ${orderId} status updated but email failed:`,
           emailError
         );
@@ -220,7 +219,7 @@ export async function PUT(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error updating order:", error);
+    logger.error("Error updating order:", error);
     return NextResponse.json(
       { success: false, error: "Failed to update order" },
       { status: 500 }

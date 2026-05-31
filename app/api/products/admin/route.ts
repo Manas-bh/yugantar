@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
 import { requireAdminUser } from "@/lib/security/auth-guards";
+import { logger } from "@/lib/logger";
 import {
   createProductRecord,
   deleteProductById,
@@ -56,7 +57,7 @@ function getPublicIdFromUrl(url: string): string {
     const filename = parts[parts.length - 1];
     return filename.split(".")[0];
   } catch (error) {
-    console.warn("Error extracting public ID from URL:", url, error);
+    logger.warn("Error extracting public ID from URL:", url, error);
     return url;
   }
 }
@@ -216,7 +217,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error creating product:", error);
+    logger.error("Error creating product:", error);
     return NextResponse.json(
       { error: "Failed to create product" },
       { status: 500 }
@@ -240,7 +241,7 @@ export async function PUT(request: NextRequest) {
       return authResult; // Return error response if auth failed
     }
 
-    console.log("PUT request received for product update");
+    logger.info("PUT request received for product update");
     const formData = await request.formData();
 
     // Extract form fields
@@ -303,7 +304,7 @@ export async function PUT(request: NextRequest) {
       !category.length ||
       !sizes.length
     ) {
-      console.error("Validation failed:", {
+      logger.error("Validation failed:", {
         productId: !!productId,
         name: !!name,
         description: !!description,
@@ -374,7 +375,7 @@ export async function PUT(request: NextRequest) {
             const publicId = getPublicIdFromUrl(oldImageUrl);
             await deleteImage(publicId);
           } catch (error) {
-            console.warn("Failed to delete old image:", error);
+            logger.warn("Failed to delete old image:", error);
           }
         }
 
@@ -429,7 +430,7 @@ export async function PUT(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error updating product:", error);
+    logger.error("Error updating product:", error);
     return NextResponse.json(
       {
         error: `Failed to update product: ${
@@ -479,7 +480,7 @@ export async function DELETE(request: NextRequest) {
         const publicId = getPublicIdFromUrl(imageUrl);
         await deleteImage(publicId);
       } catch (error) {
-        console.warn("Failed to delete image:", error);
+        logger.warn("Failed to delete image:", error);
       }
     }
 
@@ -499,7 +500,7 @@ export async function DELETE(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error deleting product:", error);
+    logger.error("Error deleting product:", error);
     return NextResponse.json(
       { error: "Failed to delete product" },
       { status: 500 }

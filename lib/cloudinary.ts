@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { logger } from "@/lib/logger";
 
 if (
   !process.env.CLOUDINARY_URL &&
@@ -54,7 +55,7 @@ export const deleteImage = async (publicId: string) => {
     const result = await cloudinary.uploader.destroy(publicId);
     return result;
   } catch (error) {
-    console.error("Error deleting image from cloudinary:", error);
+    logger.error("Error deleting image from cloudinary:", error);
     throw error;
   }
 };

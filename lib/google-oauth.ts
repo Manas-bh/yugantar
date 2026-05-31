@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import crypto from "crypto";
 import { sanitizeCallbackUrl } from "@/lib/security/validation";
+import { logger } from "@/lib/logger";
 
 // Google OAuth configuration
 export const GOOGLE_OAUTH_CONFIG = {
@@ -264,7 +265,7 @@ export async function verifyGoogleOAuth(code: string): Promise<any> {
     const userInfo = await userInfoResponse.json();
     return userInfo;
   } catch (error) {
-    console.error("Error verifying Google OAuth:", error);
+    logger.error("Error verifying Google OAuth:", error);
     throw error;
   }
 }

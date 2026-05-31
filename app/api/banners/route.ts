@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImage, deleteImage } from "@/lib/cloudinary";
 import { requireAdminUser } from "@/lib/security/auth-guards";
+import { logger } from "@/lib/logger";
 import {
   parsePositiveInt,
   sanitizeLinkUrl,
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ banners: [] });
     }
-    console.error("Error fetching banners:", error);
+    logger.error("Error fetching banners:", error);
     return NextResponse.json({ error: "Failed to fetch banners" }, { status: 500 });
   }
 }
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error creating banner:", error);
+    logger.error("Error creating banner:", error);
     return NextResponse.json({ error: "Failed to create banner" }, { status: 500 });
   }
 }
@@ -263,7 +264,7 @@ export async function PUT(request: NextRequest) {
         const publicId = getPublicIdFromUrl(existingBanner.image);
         await deleteImage(publicId);
       } catch (error) {
-        console.warn("Failed to delete previous banner image:", error);
+        logger.warn("Failed to delete previous banner image:", error);
       }
     }
 
@@ -307,7 +308,7 @@ export async function PUT(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error updating banner:", error);
+    logger.error("Error updating banner:", error);
     return NextResponse.json({ error: "Failed to update banner" }, { status: 500 });
   }
 }
@@ -341,7 +342,7 @@ export async function DELETE(request: NextRequest) {
       const publicId = getPublicIdFromUrl(banner.image);
       await deleteImage(publicId);
     } catch (error) {
-      console.warn("Failed to delete banner image from Cloudinary:", error);
+      logger.warn("Failed to delete banner image from Cloudinary:", error);
     }
 
     await deleteBannerRecord(bannerId);
@@ -354,7 +355,7 @@ export async function DELETE(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error deleting banner:", error);
+    logger.error("Error deleting banner:", error);
     return NextResponse.json({ error: "Failed to delete banner" }, { status: 500 });
   }
 }

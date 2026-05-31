@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { logger } from "@/lib/logger";
 
 let cachedSupabaseAdminClient: SupabaseClient | null = null;
 let hasLoggedSupabaseConfigWarning = false;
@@ -31,7 +32,7 @@ export function getSupabaseAdminClient(): SupabaseClient {
   if (!url || !serviceKey) {
     if (!hasLoggedSupabaseConfigWarning) {
       hasLoggedSupabaseConfigWarning = true;
-      console.warn(new SupabaseConfigError().message);
+      logger.warn(new SupabaseConfigError().message);
     }
 
     throw new SupabaseConfigError();

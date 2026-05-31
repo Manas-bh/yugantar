@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import {
   findProductById,
   updateProductStockById,
@@ -81,7 +82,7 @@ export async function validateStock(items: IOrderItem[]): Promise<{
         });
       }
     } catch (error) {
-      console.error(
+      logger.error(
         `Error validating stock for product ${item.productId}:`,
         error
       );
@@ -134,11 +135,11 @@ export async function reduceStock(items: IOrderItem[]): Promise<{
       };
 
       await updateProductStockById(item.productId, nextProductStock);
-      console.log(
+      logger.info(
         `✅ Stock reduced for product ${item.productId}, size ${item.size}: ${currentStock} → ${nextStock}`
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `Error reducing stock for product ${item.productId}:`,
         error
       );
@@ -183,11 +184,11 @@ export async function restoreStock(items: IOrderItem[]): Promise<{
       };
 
       await updateProductStockById(item.productId, nextProductStock);
-      console.log(
+      logger.info(
         `✅ Stock restored for product ${item.productId}, size ${item.size}: ${currentStock} → ${nextStock}`
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `Error restoring stock for product ${item.productId}:`,
         error
       );
@@ -223,7 +224,7 @@ export async function getCurrentStock(
 
     return getStockValue(product.stock, size);
   } catch (error) {
-    console.error(
+    logger.error(
       `Error getting current stock for product ${productId}:`,
       error
     );

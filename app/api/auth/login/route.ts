@@ -1,6 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { authenticateUser, createJWT, getUserByEmail } from "@/lib/auth";
 import { getAuthCookieOptions } from "@/lib/security/cookies";
+import { logger } from "@/lib/logger";
+import { validateBody } from "@/lib/validation/api";
+import { loginBodySchema } from "@/lib/validation/schemas";
 import {
   isValidEmail,
   sanitizeEmail,
@@ -9,14 +12,22 @@ import { checkRateLimit } from "@/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const { data: body, error: validationError } = await validateBody(
+      request,
+      loginBodySchema
+    );
+    if (validationError) {
+      return validationError;
+    }
+
+    const { email, password } = body;
     const normalizedEmail = sanitizeEmail(email);
 
     const clientIp =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       "unknown";
     const rateLimitKey = `auth:login:${clientIp}:${normalizedEmail}`;
-    const rateLimit = checkRateLimit(rateLimitKey, {
+    const rateLimit = await checkRateLimit(rateLimitKey, {
       limit: 10,
       windowMs: 15 * 60 * 1000,
     });
@@ -91,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("Login error:", error);
+    logger.error("Login error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

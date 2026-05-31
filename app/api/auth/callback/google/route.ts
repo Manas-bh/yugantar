@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import {
   exchangeCodeForTokens,
   getGoogleUserInfo,
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (error) {
-      console.error("OAuth error:", error);
+      logger.error("OAuth error:", error);
       const callbackPageUrl = new URL("/auth/callback/google", request.url);
       callbackPageUrl.searchParams.set("error", error);
       callbackPageUrl.searchParams.set("message", error);
@@ -121,7 +122,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error("OAuth callback error:", error);
+    logger.error("OAuth callback error:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Authentication failed";
     const callbackPageUrl = new URL("/auth/callback/google", request.url);

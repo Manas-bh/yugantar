@@ -3,6 +3,7 @@ import { getUserFromToken } from "@/lib/auth";
 import { getExpiredAuthCookieOptions } from "@/lib/security/cookies";
 import { isTokenDenied } from "@/lib/security/token-denylist";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     // Rate limiting to prevent abuse
     const clientIp =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rateLimit = checkRateLimit(`auth:me:${clientIp}`, {
+    const rateLimit = await checkRateLimit(`auth:me:${clientIp}`, {
       limit: 60,
       windowMs: 60 * 1000, // 60 requests per minute
     });
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Auth check error:", error);
+    logger.error("Auth check error:", error);
 
     // Clear invalid cookie on error
     const response = NextResponse.json(

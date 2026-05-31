@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/security/auth-guards";
+import { logger } from "@/lib/logger";
 import {
   clearAllProducts,
   createProductRecord,
@@ -677,7 +678,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error seeding products:", error);
+    logger.error("Error seeding products:", error);
     return NextResponse.json(
       { error: "Failed to seed products" },
       { status: 500 }
@@ -724,7 +725,7 @@ export async function DELETE(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error clearing products:", error);
+    logger.error("Error clearing products:", error);
     return NextResponse.json(
       { error: "Failed to clear products" },
       { status: 500 }
@@ -801,7 +802,7 @@ export async function PUT(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error updating products:", error);
+    logger.error("Error updating products:", error);
     return NextResponse.json(
       { error: "Failed to update products" },
       { status: 500 }

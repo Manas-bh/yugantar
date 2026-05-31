@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import {
   createCart,
   findCartBySessionId,
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ items: [], totalItems: 0 });
     }
-    console.error("Error fetching cart:", error);
+    logger.error("Error fetching cart:", error);
     return NextResponse.json(
       { error: "Failed to fetch cart" },
       { status: 500 }
@@ -186,7 +187,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error updating cart:", error);
+    logger.error("Error updating cart:", error);
     return NextResponse.json(
       { error: "Failed to update cart" },
       { status: 500 }
@@ -234,7 +235,7 @@ export async function DELETE(request: NextRequest) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ success: true });
     }
-    console.error("Error clearing cart:", error);
+    logger.error("Error clearing cart:", error);
     return NextResponse.json(
       { error: "Failed to clear cart" },
       { status: 500 }

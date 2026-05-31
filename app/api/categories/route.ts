@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listCategories } from "@/lib/data/categories";
 import { isSupabaseConfigured, SupabaseConfigError } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export async function GET() {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ categories: [] });
     }
-    console.error("Error fetching categories:", error);
+    logger.error("Error fetching categories:", error);
     return NextResponse.json(
       { error: "Failed to fetch categories" },
       { status: 500 }

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { type NextRequest, NextResponse } from "next/server"
 import { verifyJWT } from "@/lib/auth"
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Token verification error:", error)
+    logger.error("Token verification error:", error)
     return NextResponse.json({ error: "Token verification failed" }, { status: 401 })
   }
 }

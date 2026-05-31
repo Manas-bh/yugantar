@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import type { IUser } from "@/lib/domain/types";
 import { sanitizeEmail } from "@/lib/security/validation";
+import { logger } from "@/lib/logger";
 import {
   createUserRecord,
   ensureDefaultAdminUser,
@@ -59,7 +60,7 @@ export async function hashPassword(password: string): Promise<string> {
   try {
     return await bcrypt.hash(password, 12);
   } catch (error) {
-    console.error("Error hashing password:", error);
+    logger.error("Error hashing password:", error);
     throw new Error("Failed to hash password");
   }
 }
@@ -69,7 +70,7 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   try {
     return await bcrypt.compare(password, hashedPassword);
   } catch (error) {
-    console.error("Error verifying password:", error);
+    logger.error("Error verifying password:", error);
     return false;
   }
 }
@@ -82,7 +83,7 @@ export async function getUserById(id: string): Promise<IUser | null> {
     if (error instanceof SupabaseConfigError) {
       return null;
     }
-    console.error("Error getting user by ID:", error);
+    logger.error("Error getting user by ID:", error);
     return null;
   }
 }
@@ -96,7 +97,7 @@ export async function getUserByEmail(email: string): Promise<IUser | null> {
     if (error instanceof SupabaseConfigError) {
       return null;
     }
-    console.error("Error getting user by email:", error);
+    logger.error("Error getting user by email:", error);
     return null;
   }
 }
@@ -130,7 +131,7 @@ export async function createUser(userData: {
     if (error instanceof SupabaseConfigError) {
       throw new Error("Authentication service is temporarily unavailable");
     }
-    console.error("Error creating user:", error);
+    logger.error("Error creating user:", error);
     throw new Error("Failed to create user");
   }
 }
@@ -140,7 +141,7 @@ export async function updateUserLastLogin(userId: string): Promise<void> {
   try {
     await updateUserLastLoginAt(userId);
   } catch (error) {
-    console.error("Error updating last login:", error);
+    logger.error("Error updating last login:", error);
   }
 }
 
@@ -178,7 +179,7 @@ export async function authenticateUser(email: string, password: string): Promise
     if (error instanceof SupabaseConfigError) {
       return null;
     }
-    console.error("Error authenticating user:", error);
+    logger.error("Error authenticating user:", error);
     return null;
   }
 }
@@ -203,14 +204,14 @@ export async function initializeDefaultAdmin(): Promise<void> {
     const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "";
 
     if (!adminEmail || !adminPassword) {
-      console.warn(
+      logger.warn(
         "Skipping default admin initialization: DEFAULT_ADMIN_EMAIL or DEFAULT_ADMIN_PASSWORD missing"
       );
       return;
     }
 
     if (adminPassword.length < 12) {
-      console.warn(
+      logger.warn(
         "Skipping default admin initialization: DEFAULT_ADMIN_PASSWORD must be at least 12 characters"
       );
       return;
@@ -224,13 +225,13 @@ export async function initializeDefaultAdmin(): Promise<void> {
     });
 
     adminInitialized = true;
-    console.log("✅ Default admin user checked/created");
+    logger.info("✅ Default admin user checked/created");
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
-      console.warn("Skipping default admin init: Supabase not configured");
+      logger.warn("Skipping default admin init: Supabase not configured");
       return;
     }
-    console.error("Error initializing admin:", error);
+    logger.error("Error initializing admin:", error);
     throw error;
   }
 }

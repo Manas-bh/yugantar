@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 import {
   getGoogleOAuthURL,
   isGoogleOAuthConfigured,
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, url });
   } catch (error) {
-    console.error("Failed to generate Google OAuth URL:", error);
+    logger.error("Failed to generate Google OAuth URL:", error);
     return NextResponse.json(
       { success: false, error: "Failed to generate Google OAuth URL" },
       { status: 500 }

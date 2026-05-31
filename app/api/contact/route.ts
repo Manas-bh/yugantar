@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { logger } from "@/lib/logger";
 
 const RESEND_PLACEHOLDER_KEY = "re_xxxxxxxxx";
 
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error sending contact form email:", error);
+    logger.error("Error sending contact form email:", error);
     return NextResponse.json(
       { success: false, error: "Failed to send message" },
       { status: 500 }

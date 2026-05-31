@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/security/auth-guards";
 import { findOrdersByUserId } from "@/lib/data/orders";
+import { logger } from "@/lib/logger";
 import {
   isSupabaseConfigured,
   SupabaseConfigError,
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.error("Error fetching profile:", error);
+    logger.error("Error fetching profile:", error);
     return NextResponse.json(
       { error: "Failed to fetch profile" },
       { status: 500 }

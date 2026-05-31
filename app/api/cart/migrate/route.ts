@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromToken } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import {
   createCart,
   deleteCartBySessionId,
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Error migrating cart:", error);
+    logger.error("Error migrating cart:", error);
     return NextResponse.json(
       { error: "Failed to migrate cart" },
       { status: 500 }

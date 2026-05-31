@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { type NextRequest, NextResponse } from "next/server"
 import { getExpiredAuthCookieOptions } from "@/lib/security/cookies";
 import { addToTokenDenylist } from "@/lib/security/token-denylist";
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
     try {
       await addToTokenDenylist(token);
     } catch (error) {
-      console.error("Failed to add token to denylist:", error);
+      logger.error("Failed to add token to denylist:", error);
       // Continue with logout even if denylist fails
     }
   }

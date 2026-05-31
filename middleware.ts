@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { sanitizeCallbackUrl } from "@/lib/security/validation";
+import { logger } from "@/lib/logger";
 
 const jwtSecretValue = process.env.JWT_SECRET;
 
@@ -10,11 +11,8 @@ if (!jwtSecretValue || jwtSecretValue.length < 32) {
 }
 
 const JWT_SECRET = new TextEncoder().encode(jwtSecretValue);
-const DEFAULT_ADMIN_EMAIL = (process.env.DEFAULT_ADMIN_EMAIL || "admin@yugantar.studio")
-  .trim()
-  .toLowerCase();
 
-// List of protected routes (add more as needed)
+// List of protected routes
 const protectedRoutes = ["/admin", "/profile", "/address", "/checkout"];
 
 export async function middleware(request: NextRequest) {
@@ -33,21 +31,19 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // For admin, check role
+    // For admin, enforce role-based access only
     if (pathname.startsWith("/admin")) {
       try {
         const { payload } = await jwtVerify(token, JWT_SECRET);
 
-        const tokenEmail = String(payload.email || "").trim().toLowerCase();
-
-        if (payload.role !== "admin" && tokenEmail !== DEFAULT_ADMIN_EMAIL) {
+        if (payload.role !== "admin") {
           const callbackUrl = encodeURIComponent(sanitizeCallbackUrl(pathname));
           return NextResponse.redirect(
             new URL(`/auth?callbackUrl=${callbackUrl}`, request.url)
           );
         }
       } catch (error) {
-        console.error("JWT verification error in middleware:", error);
+        logger.error("JWT verification error in middleware:", error);
         const callbackUrl = encodeURIComponent(sanitizeCallbackUrl(pathname));
         return NextResponse.redirect(
           new URL(`/auth?callbackUrl=${callbackUrl}`, request.url)

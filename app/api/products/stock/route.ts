@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentStock } from "@/lib/stock-utils";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       stock: currentStock,
     });
   } catch (error) {
-    console.error("Error getting current stock:", error);
+    logger.error("Error getting current stock:", error);
     return NextResponse.json(
       { success: false, error: "Failed to get current stock" },
       { status: 500 }

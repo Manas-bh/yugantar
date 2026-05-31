@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { sanitizeEmail } from "@/lib/security/validation";
 import { generateNumericOtp, hashOtp } from "@/lib/auth-otp";
+import { logger } from "@/lib/logger";
+import { validateBody } from "@/lib/validation/api";
+import { otpResendBodySchema } from "@/lib/validation/schemas";
 import {
   findAuthEmailOtpByEmail,
   updateAuthEmailOtpForResendById,
@@ -19,11 +22,15 @@ function getClientIp(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const { data: body, error: validationError } = await validateBody(request, otpResendBodySchema);
+    if (validationError) {
+      return validationError;
+    }
+    const { email } = body;
     const normalizedEmail = sanitizeEmail(email);
     const clientIp = getClientIp(request);
 
-    const resendRateLimit = checkRateLimit(`auth:register:resend:${clientIp}:${normalizedEmail}`, {
+    const resendRateLimit = await checkRateLimit(`auth:register:resend:${clientIp}:${normalizedEmail}`, {
       limit: 5,
       windowMs: 15 * 60 * 1000,
     });
@@ -105,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("Resend OTP error:", error);
+    logger.error("Resend OTP error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

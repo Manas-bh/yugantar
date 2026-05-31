@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { reduceStock } from "@/lib/stock-utils";
 import { NextRequest } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/security/auth-guards";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { sendNewOrderEmails } from "@/lib/email/order-notifications";
+import { logger } from "@/lib/logger";
+import { validateBody } from "@/lib/validation/api";
+import { checkoutVerifyBodySchema } from "@/lib/validation/schemas";
+import {
+  convertReservation,
+  releaseReservation,
+} from "@/lib/data/stock-reservations";
 import {
   findOrderByOrderIdForUser,
   updateOrderByOrderIdForUser,
@@ -47,10 +53,13 @@ export async function POST(request: NextRequest) {
       return auth.error;
     }
 
-    const rateLimit = checkRateLimit(`payment:verify:${auth.user._id.toString()}`, {
-      limit: 30,
-      windowMs: 10 * 60 * 1000,
-    });
+    const rateLimit = await checkRateLimit(
+      `payment:verify:${auth.user._id.toString()}`,
+      {
+        limit: 30,
+        windowMs: 10 * 60 * 1000,
+      }
+    );
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -61,7 +70,9 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
-            "Retry-After": `${Math.ceil((rateLimit.resetAt - Date.now()) / 1000)}`,
+            "Retry-After": `${Math.ceil(
+              (rateLimit.resetAt - Date.now()) / 1000
+            )}`,
           },
         }
       );
@@ -124,7 +135,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Payment already verified",
-        stockReduced: true,
+        stockConverted: true,
         stockErrors: [],
       });
     }
@@ -138,10 +149,43 @@ export async function POST(request: NextRequest) {
     );
 
     if (isAuthentic) {
-      // Reduce stock quantities for all items in the order
-      const stockReduction = await reduceStock(order.items);
-      if (!stockReduction.success) {
-        console.error("Stock reduction errors:", stockReduction.errors);
+      // Convert stock reservations to actual stock reduction
+      const conversion = await convertReservation(orderId);
+
+      if (!conversion.success) {
+        logger.error(
+          { orderId, message: conversion.message },
+          "Stock reservation conversion failed after payment"
+        );
+
+        // Release the reservations to free up stock for other customers
+        await releaseReservation(orderId);
+
+        // Update order as failed due to stock issue
+        await updateOrderByOrderIdForUser(
+          orderId,
+          auth.user._id.toString(),
+          {
+            payment: {
+              ...order.payment,
+              status: "failed",
+            },
+            orderStatus: "cancelled",
+          }
+        );
+
+        // TODO: Initiate refund via Razorpay API
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Stock unavailable after payment",
+            message:
+              "Your payment was received but the items went out of stock. A refund will be initiated.",
+            stockConverted: false,
+            stockErrors: [conversion.message],
+          },
+          { status: 500 }
+        );
       }
 
       // Update order with payment details
@@ -157,7 +201,8 @@ export async function POST(request: NextRequest) {
 
       // Send order confirmation email after successful payment
       try {
-        const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || "https://yugantar.studio";
+        const baseAppUrl =
+          process.env.NEXT_PUBLIC_APP_URL || "https://yugantar.studio";
         await sendNewOrderEmails({
           orderId: order.orderId,
           userEmail: auth.user.email,
@@ -172,19 +217,22 @@ export async function POST(request: NextRequest) {
           total: order.total,
         });
       } catch (emailError) {
-        console.error(
-          `Order ${order.orderId} verified but confirmation email failed:`,
-          emailError
+        logger.error(
+          { orderId: order.orderId, err: emailError },
+          "Order verified but confirmation email failed"
         );
       }
 
       return NextResponse.json({
         success: true,
         message: "Payment verified successfully",
-        stockReduced: stockReduction.success,
-        stockErrors: stockReduction.errors,
+        stockConverted: conversion.success,
+        stockErrors: [],
       });
     } else {
+      // Invalid signature — release reservations
+      await releaseReservation(orderId);
+
       // Update order as failed
       await updateOrderByOrderIdForUser(orderId, auth.user._id.toString(), {
         payment: {
@@ -205,7 +253,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Payment verification error:", error);
+    logger.error("Payment verification error:", error);
     return NextResponse.json(
       { success: false, error: "Payment verification failed" },
       { status: 500 }

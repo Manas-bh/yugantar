@@ -6,6 +6,9 @@ import { SupabaseConfigError } from "@/lib/supabase/server";
 import { generateNumericOtp, hashOtp } from "@/lib/auth-otp";
 import { upsertAuthEmailOtp } from "@/lib/data/auth-email-otps";
 import { sendSignupOtpEmail } from "@/lib/email/auth-otp";
+import { logger } from "@/lib/logger";
+import { validateBody } from "@/lib/validation/api";
+import { registerBodySchema } from "@/lib/validation/schemas";
 
 const OTP_EXPIRY_MINUTES = 10;
 
@@ -21,7 +24,7 @@ export async function POST(request: NextRequest) {
     const rawPassword = String(password || "");
     const clientIp = getClientIp(request);
 
-    const startRateLimit = checkRateLimit(`auth:register:start:${clientIp}:${normalizedEmail}`, {
+    const startRateLimit = await checkRateLimit(`auth:register:start:${clientIp}:${normalizedEmail}`, {
       limit: 5,
       windowMs: 15 * 60 * 1000,
     });
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.error("Register start error:", error);
+    logger.error("Register start error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

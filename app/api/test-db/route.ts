@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/security/auth-guards";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       message: "Supabase connection successful",
     });
   } catch (error) {
-    console.error("Database connection test failed:", error);
+    logger.error("Database connection test failed:", error);
 
     return NextResponse.json(
       {

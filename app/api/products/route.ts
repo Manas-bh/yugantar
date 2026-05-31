@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminUser } from "@/lib/security/auth-guards";
+import { logger } from "@/lib/logger";
 import {
   countProducts,
   findProductBySlug,
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ products: [], total: 0, page: 1, limit: 0 });
     }
-    console.error("Error fetching products:", error);
+    logger.error("Error fetching products:", error);
     return NextResponse.json(
       { error: "Failed to fetch products" },
       { status: 500 }

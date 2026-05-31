@@ -3,6 +3,7 @@ import { getUserById } from "@/lib/auth";
 import { restoreStock } from "@/lib/stock-utils";
 import { requireAuthenticatedUser } from "@/lib/security/auth-guards";
 import { sendOrderStatusUpdateEmail } from "@/lib/email/order-notifications";
+import { logger } from "@/lib/logger";
 import {
   findOrderByOrderId,
   updateOrderByOrderId,
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
       stockErrors = stockRestoration.errors;
 
       if (!stockRestoration.success) {
-        console.error("Stock restoration errors:", stockRestoration.errors);
+        logger.error("Stock restoration errors:", stockRestoration.errors);
       }
     }
 
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
         nextStatus: "cancelled",
       });
     } catch (emailError) {
-      console.error(
+      logger.error(
         `Order ${orderId} cancelled but status email failed:`,
         emailError
       );
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    console.error("Order cancellation error:", error);
+    logger.error("Order cancellation error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to cancel order" },
       { status: 500 }
