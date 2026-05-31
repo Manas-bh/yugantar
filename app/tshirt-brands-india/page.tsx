@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SiteHeader } from "@/components/site-header";
 import {
   absoluteUrl,
   createMetadata,
@@ -65,7 +64,6 @@ export default function TshirtBrandsIndiaPage() {
 
   return (
     <main className="min-h-screen bg-background">
-      <SiteHeader currentPath="/tshirt-brands-india" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SiteHeader } from "@/components/site-header";
 import {
   Calendar,
   Heart,
@@ -122,7 +121,6 @@ export default function AboutPage() {
       />
 
       <div className="min-h-screen bg-background transition-colors">
-        <SiteHeader currentPath="/about" />
 
         <section className="app-shell py-6 sm:py-8">
           <div className="section-shell bg-primary px-5 py-14 text-center text-white sm:px-8 sm:py-16">

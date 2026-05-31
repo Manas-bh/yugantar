@@ -3,7 +3,6 @@ import Link from "next/link";
 import { DynamicFeaturedProducts } from "@/components/dynamic-featured-products";
 import { HomeHeroCarousel } from "@/components/home-hero-carousel";
 import { HomeFeatureBanner } from "@/components/home-feature-banner";
-import { SiteHeader } from "@/components/site-header";
 import {
   absoluteUrl,
   createMetadata,
@@ -56,7 +55,6 @@ export default function Home() {
           __html: JSON.stringify(homePageStructuredData),
         }}
       />
-      <SiteHeader />
 
       <main className="flex-1">
         <HomeHeroCarousel />

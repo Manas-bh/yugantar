@@ -16,7 +16,6 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { SiteHeader } from "@/components/site-header";
 
 export default function CartPage() {
   const {
@@ -45,7 +44,6 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-background transition-colors">
-      <SiteHeader />
 
       <div className="app-shell pt-4">
         <div className="section-shell flex h-14 items-center justify-between px-4 sm:px-6">

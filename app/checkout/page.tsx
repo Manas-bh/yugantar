@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, CreditCard, MapPin } from "lucide-react";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 
 declare global {
   interface Window {
@@ -321,9 +320,7 @@ export default function CheckoutPage() {
       setPinLookupMessage("");
 
       try {
-        const response = await fetch(
-          `https://api.postalpincode.in/pincode/${pinCode}`
-        );
+        const response = await fetch(`/api/pincode?code=${pinCode}`);
         const data = (await response.json()) as PinLookupResponse[];
         const result = Array.isArray(data) ? data[0] : null;
         const postOffice = result?.PostOffice?.[0];
@@ -563,7 +560,7 @@ export default function CheckoutPage() {
       if (verifyResponse.ok && verifyData.success) {
         // Clear cart and redirect to orders page
         clearCart();
-        window.location.href = "/orders";
+        window.location.replace("/orders?t=" + Date.now());
       } else {
         router.push(`/payment?status=failed&orderId=${orderId}`);
       }
@@ -617,8 +614,6 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-background transition-colors">
-      <SiteHeader />
-
       <div className="app-shell pt-4">
         <div className="section-shell mx-auto flex h-14 w-full items-center justify-between px-4 sm:px-6">
           <Link
@@ -728,42 +723,24 @@ export default function CheckoutPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
-                    id="city"
-                    name="city"
-                    value={address.city}
+                    id="phone"
+                    name="phone"
+                    value={address.phone}
                     onChange={handleInputChange}
                     onInput={handleInputChange}
-                    placeholder="City"
-                    autoComplete="address-level2"
-                    className={errors.city ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    placeholder="Phone number"
+                    inputMode="numeric"
+                    maxLength={10}
+                    autoComplete="tel"
+                    className={errors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
                     required
                   />
-                  {errors.city ? (
-                    <p className="mt-1 text-xs text-red-600">{errors.city}</p>
+                  {errors.phone ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
                   ) : null}
                 </div>
-                <div>
-                  <Label htmlFor="state">State *</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={address.state}
-                    onChange={handleInputChange}
-                    onInput={handleInputChange}
-                    placeholder="State"
-                    autoComplete="address-level1"
-                    className={errors.state ? "border-red-500 focus-visible:ring-red-500" : ""}
-                    required
-                  />
-                  {errors.state ? (
-                    <p className="mt-1 text-xs text-red-600">{errors.state}</p>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="pinCode">PIN Code *</Label>
                   <Input
@@ -783,36 +760,55 @@ export default function CheckoutPage() {
                     <p className="mt-1 text-xs text-red-600">{errors.pinCode}</p>
                   ) : null}
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="city">City *</Label>
                   <Input
-                    id="phone"
-                    name="phone"
-                    value={address.phone}
+                    id="city"
+                    name="city"
+                    value={address.city}
                     onChange={handleInputChange}
                     onInput={handleInputChange}
-                    placeholder="Phone number"
-                    inputMode="numeric"
-                    maxLength={10}
-                    autoComplete="tel"
-                    className={errors.phone ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    placeholder="City"
+                    autoComplete="address-level2"
+                    className={errors.city ? "border-red-500 focus-visible:ring-red-500" : ""}
                     required
                   />
-                  {errors.phone ? (
-                    <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                  {errors.city ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.city}</p>
                   ) : null}
+                </div>
+                <div>
+                  <Label htmlFor="district">District</Label>
+                  <Input
+                    id="district"
+                    name="district"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    placeholder="District"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="district">District</Label>
+                  <Label htmlFor="state">State *</Label>
                   <Input
-                    id="district"
-                    value={district}
-                    placeholder="Auto-filled from PIN code"
-                    readOnly
+                    id="state"
+                    name="state"
+                    value={address.state}
+                    onChange={handleInputChange}
+                    onInput={handleInputChange}
+                    placeholder="State"
+                    autoComplete="address-level1"
+                    className={errors.state ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    required
                   />
+                  {errors.state ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.state}</p>
+                  ) : null}
                 </div>
                 <div className="flex items-end">
                   <p className="text-xs text-muted-foreground">

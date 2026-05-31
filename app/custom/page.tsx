@@ -11,7 +11,6 @@ import Image from "next/image";
 
 import Link from "next/link";
 import { AddToCart } from "@/components/add-to-cart";
-import { SiteHeader } from "@/components/site-header";
 
 export default function CustomPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -78,7 +77,6 @@ export default function CustomPage() {
 
   return (
     <div className="min-h-screen bg-background transition-colors">
-      <SiteHeader currentPath="/custom" />
 
       <div className="app-shell pt-4">
         <div className="section-shell flex items-center justify-between px-4 py-3 sm:px-6">

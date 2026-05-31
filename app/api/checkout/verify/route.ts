@@ -4,6 +4,7 @@ import { reduceStock } from "@/lib/stock-utils";
 import { NextRequest } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/security/auth-guards";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { sendNewOrderEmails } from "@/lib/email/order-notifications";
 import {
   findOrderByOrderIdForUser,
   updateOrderByOrderIdForUser,
@@ -153,6 +154,29 @@ export async function POST(request: NextRequest) {
         },
         orderStatus: "confirmed",
       });
+
+      // Send order confirmation email after successful payment
+      try {
+        const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || "https://yugantar.studio";
+        await sendNewOrderEmails({
+          orderId: order.orderId,
+          userEmail: auth.user.email,
+          userName: auth.user.name,
+          items: order.items.map((item) => ({
+            ...item,
+            image: item.image,
+            productUrl: `${baseAppUrl}/products/${item.productId}`,
+          })),
+          subtotal: order.subtotal,
+          shipping: order.shipping,
+          total: order.total,
+        });
+      } catch (emailError) {
+        console.error(
+          `Order ${order.orderId} verified but confirmation email failed:`,
+          emailError
+        );
+      }
 
       return NextResponse.json({
         success: true,

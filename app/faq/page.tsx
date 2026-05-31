@@ -12,7 +12,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { SiteHeader } from "@/components/site-header";
 import Link from "next/link";
 import { HelpCircle } from "lucide-react";
 
@@ -190,7 +189,6 @@ export default function FAQPage() {
         }}
       />
       <div className="min-h-screen bg-background">
-        <SiteHeader currentPath="/faq" />
 
         <div className="app-shell pt-6">
           <div className="section-shell px-5 py-6 sm:px-6">

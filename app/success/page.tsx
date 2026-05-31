@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Package } from "lucide-react";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 
 function SuccessContent() {
   const router = useRouter();
@@ -24,7 +23,6 @@ function SuccessContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader />
       <div className="app-shell flex items-center justify-center py-10">
       <Card className="surface-card w-full max-w-md text-center">
         <CardHeader>

@@ -6,7 +6,6 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { SiteHeader } from "@/components/site-header";
 
 function AuthContent() {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,7 +30,6 @@ function AuthContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader showCart={false} />
 
       <div className="app-shell flex justify-center py-8 sm:py-10">
         <div className="w-full max-w-md space-y-4">

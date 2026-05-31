@@ -17,27 +17,7 @@ import {
 import { getTotalStock, normalizeStock } from "@/lib/stock-normalization";
 import { ProductCardActions } from "@/components/product-card-actions";
 import { optimizeImageUrl } from "@/lib/image-optimization";
-
-interface ApiProduct {
-  _id: string;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  images: string[];
-  category: string[];
-  tags: string[];
-  sizes: string[];
-  colors: string[];
-  stock: number | { [size: string]: number };
-  isActive: boolean;
-  isFeatured: boolean;
-  rating: number;
-  reviews: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { type Product as ApiProduct, getProductBadge } from "@/lib/types";
 
 export function DynamicFeaturedProducts() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
@@ -98,14 +78,7 @@ export function DynamicFeaturedProducts() {
     };
   }, []);
 
-  const getProductBadge = (product: ApiProduct) => {
-    if (product.isFeatured) return "Featured";
-    if (product.tags?.includes("bestseller")) return "Bestseller";
-    if (product.tags?.includes("new")) return "New";
-    if (product.tags?.includes("viral")) return "Viral";
-    if (product.tags?.includes("trending")) return "Trending";
-    return null;
-  };
+
 
   if (isLoading) {
     return (
@@ -162,69 +135,72 @@ export function DynamicFeaturedProducts() {
               <div className="h-full">
                 <Card className="group surface-card flex h-full min-h-[24rem] flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1">
                   <CardContent className="flex h-full flex-col p-0">
-                    <div className="relative aspect-[4/5] w-full bg-[hsl(var(--surface-1))]">
-                      <Image
-                        src={optimizeImageUrl(
-                          product.images[0] ||
-                            "/placeholder.svg?height=400&width=400",
-                          { width: 960, quality: 65 }
+                    <Link href={`/products/${product.slug}`} className="block">
+                      <div className="relative aspect-[4/5] w-full bg-[hsl(var(--surface-1))]">
+                        <Image
+                          src={optimizeImageUrl(
+                            product.images[0] ||
+                              "/placeholder.svg?height=400&width=400",
+                            { width: 960, quality: 65 }
+                          )}
+                          alt={product.name}
+                          fill
+                          className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.03]"
+                          sizes="(max-width: 640px) 82vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                        />
+                        {badge && (
+                          <Badge className="absolute left-3 top-3 rounded-full bg-[hsl(var(--surface-3))] px-3 py-1 text-[11px] font-semibold text-[hsl(var(--surface-3-foreground))] hover:bg-[hsl(var(--surface-3))]">
+                            {badge}
+                          </Badge>
                         )}
-                        alt={product.name}
-                        fill
-                        className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.03]"
-                        sizes="(max-width: 640px) 82vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                      />
-                      {badge && (
-                        <Badge className="absolute left-3 top-3 rounded-full bg-[hsl(var(--surface-3))] px-3 py-1 text-[11px] font-semibold text-[hsl(var(--surface-3-foreground))] hover:bg-[hsl(var(--surface-3))]">
-                          {badge}
-                        </Badge>
-                      )}
-                      <div className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-black/65 text-white shadow-md">
-                        <ShoppingCart className="h-4 w-4" />
+                        <div className="absolute bottom-3 right-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-black/65 text-white shadow-md">
+                          <ShoppingCart className="h-4 w-4" />
+                        </div>
+                        {product.originalPrice && (
+                          <Badge className="absolute bottom-3 left-3 rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-accent-foreground hover:bg-accent">
+                            Save ₹
+                            {(product.originalPrice - product.price).toFixed(2)}
+                          </Badge>
+                        )}
                       </div>
-                      {product.originalPrice && (
-                        <Badge className="absolute bottom-3 left-3 rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-accent-foreground hover:bg-accent">
-                          Save ₹
-                          {(product.originalPrice - product.price).toFixed(2)}
-                        </Badge>
-                      )}
-                    </div>
 
-                    <div className="flex flex-1 flex-col p-4">
-                      <Link href={`/products/${product.slug}`}>
+                      <div className="p-4 pb-0">
                         <h3 className="mb-1 line-clamp-1 text-lg font-bold lowercase text-foreground transition-colors group-hover:text-primary">
                           {product.name}
                         </h3>
-                      </Link>
-                      <p className="mb-3 flex-grow text-sm text-muted-foreground line-clamp-2">
-                        {product.description}
-                      </p>
+                        <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
+                          {product.description}
+                        </p>
 
-                      <div className="mb-3 flex items-center gap-2">
-                        <div className="flex items-center">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="ml-1 text-sm font-medium">
-                            {product.rating}
-                          </span>
-                        </div>
-                        <span className="text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">
-                          {product.reviews} reviews
-                        </span>
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-extrabold text-foreground">
-                            ₹{product.price}
-                          </span>
-                          {product.originalPrice && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              ₹{product.originalPrice}
+                        <div className="mb-3 flex items-center gap-2">
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="ml-1 text-sm font-medium">
+                              {product.rating}
                             </span>
-                          )}
+                          </div>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground">
+                            {product.reviews} reviews
+                          </span>
+                        </div>
+
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-extrabold text-foreground">
+                              ₹{product.price}
+                            </span>
+                            {product.originalPrice && (
+                              <span className="text-sm text-muted-foreground line-through">
+                                ₹{product.originalPrice}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    </Link>
+
+                    <div className="flex flex-1 flex-col px-4 pb-4">
 
                       <div className="mb-3">
                         <div className="mb-2 flex items-start gap-2">

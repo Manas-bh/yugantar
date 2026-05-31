@@ -55,7 +55,16 @@ export async function GET(request: NextRequest) {
       orders = await findOrdersByUserId(auth.user._id.toString());
     }
 
-    return NextResponse.json({ success: true, orders });
+    return NextResponse.json(
+      { success: true, orders },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          "Pragma": "no-cache",
+          "Expires": "0",
+        },
+      }
+    );
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ success: true, orders: [] });

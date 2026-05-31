@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { XCircle, RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 
 function PaymentContent() {
   const router = useRouter();
@@ -36,7 +35,6 @@ function PaymentContent() {
 
   return (
     <div className="min-h-screen bg-background transition-colors">
-      <SiteHeader />
 
       <div className="app-shell mx-auto max-w-2xl py-16">
         <Card className="surface-card text-center">

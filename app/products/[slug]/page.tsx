@@ -9,7 +9,6 @@ import { findProductBySlug } from "@/lib/data/products";
 import { normalizeStock } from "@/lib/stock-normalization";
 import { createMetadata } from "@/lib/seo";
 import { ProductImageGallery } from "@/components/product-image-gallery";
-import { SiteHeader } from "@/components/site-header";
 import { optimizeImageUrl } from "@/lib/image-optimization";
 
 interface ProductPageProps {
@@ -66,7 +65,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <main className="min-h-screen bg-background">
-      <SiteHeader />
 
       <div className="app-shell py-8 sm:py-10">
         <nav className="mb-6 text-sm text-muted-foreground">

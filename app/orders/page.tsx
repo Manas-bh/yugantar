@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { SiteHeader } from "@/components/site-header";
 
 interface OrderItem {
   productId: string;
@@ -148,6 +147,16 @@ export default function OrdersPage() {
     }
   };
 
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        fetchOrders();
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -174,8 +183,6 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-background transition-colors">
-      <SiteHeader />
-
       <div className="app-shell mx-auto max-w-4xl py-8">
         {orders.length === 0 ? (
           <Card className="surface-card text-center">

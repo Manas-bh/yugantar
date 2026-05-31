@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -60,7 +59,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader currentPath="/profile" />
 
       <div className="app-shell pt-4">
         <div className="section-shell mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:px-6">

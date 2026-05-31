@@ -4,7 +4,6 @@ import {
   createMetadata,
   generateBreadcrumbStructuredData,
 } from "@/lib/seo";
-import { SiteHeader } from "@/components/site-header";
 import { ContactPageClient } from "./contact-page-client";
 
 const SUPPORT_EMAIL = "support@yugantar.studio";
@@ -79,7 +78,6 @@ export default function ContactPage() {
         }}
       />
       <div className="min-h-screen bg-background">
-        <SiteHeader currentPath="/contact" />
 
         <div className="app-shell pt-6">
           <div className="section-shell px-5 py-6 sm:px-6">

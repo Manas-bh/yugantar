@@ -7,7 +7,6 @@ import {
   buildPricedCheckoutItems,
   computeOrderTotals,
 } from "@/lib/services/pricing";
-import { sendNewOrderEmails } from "@/lib/email/order-notifications";
 import { createOrderRecord } from "@/lib/data/orders";
 import {
   isSupabaseConfigured,
@@ -138,27 +137,6 @@ export async function POST(request: NextRequest) {
       shipping,
       total,
     });
-
-    try {
-      await sendNewOrderEmails({
-        orderId,
-        userEmail: auth.user.email,
-        userName: auth.user.name,
-        items: pricedItems.map((item) => ({
-          ...item,
-          image: item.image,
-          productUrl: `${baseAppUrl}/products/${item.productId}`,
-        })),
-        subtotal,
-        shipping,
-        total,
-      });
-    } catch (emailError) {
-      console.error(
-        `Order ${orderId} created but confirmation email failed:`,
-        emailError
-      );
-    }
 
     return NextResponse.json({
       success: true,

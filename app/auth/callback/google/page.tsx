@@ -7,7 +7,6 @@ import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { sanitizeCallbackUrl } from "@/lib/security/validation";
-import { SiteHeader } from "@/components/site-header";
 
 function GoogleCallbackContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -120,7 +119,6 @@ function GoogleCallbackContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteHeader showCart={false} />
       <div className="app-shell flex items-center justify-center py-10 sm:py-14">
         <Card className="surface-card w-full max-w-md overflow-hidden">
           <CardContent className="p-6 sm:p-8">
