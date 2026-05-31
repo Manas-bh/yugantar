@@ -44,9 +44,9 @@ export function AddToCart({
   className,
   size = "sm",
   variant = "default",
-  compact = false, // Default to false for backwards compatibility
+  compact = false,
 }: AddToCartProps) {
-  const { addToCart } = useCart();
+  const { addToCart, items, updateQuantity, removeFromCart } = useCart();
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [selectedColor, setSelectedColor] = useState(
@@ -54,10 +54,9 @@ export function AddToCart({
       ? colors.includes(defaultColor)
         ? defaultColor
         : colors[0]
-      : defaultColor || "Black" // Fallback to "Black" if no colors provided
+      : defaultColor || "Black"
   );
   const [selectedSize, setSelectedSize] = useState(defaultSize);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   // Real-time stock check
   const {
@@ -78,8 +77,19 @@ export function AddToCart({
     setSelectedSize(preferredSize);
   }, [defaultSize, sizes, stock]);
 
+  // Cart quantities for this product
+  const cartItemsForProduct = items.filter(
+    (item) => item.productId === productId
+  );
+  const totalQty = cartItemsForProduct.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+  const currentSizeItem = cartItemsForProduct.find(
+    (item) => item.size === selectedSize && item.color === selectedColor
+  );
+
   const handleAddToCart = async () => {
-    // Use real-time stock if available, fallback to passed stock prop
     const availableStock =
       currentStock !== undefined ? currentStock : stock[selectedSize] || 0;
 
@@ -105,7 +115,6 @@ export function AddToCart({
         category,
       });
 
-      setShowSuccess(true);
       toast({
         title: "Added to cart",
         description: `${name}${
@@ -114,9 +123,6 @@ export function AddToCart({
             : ` (${selectedSize})`
         } has been added to your cart.`,
       });
-
-      // Reset success state after 2 seconds
-      setTimeout(() => setShowSuccess(false), 2000);
     } catch (error) {
       toast({
         title: "Error",
@@ -128,14 +134,73 @@ export function AddToCart({
     }
   };
 
+  const handleDecrement = () => {
+    if (currentSizeItem) {
+      if (currentSizeItem.quantity <= 1) {
+        removeFromCart(currentSizeItem.id);
+      } else {
+        updateQuantity(currentSizeItem.id, currentSizeItem.quantity - 1);
+      }
+    }
+  };
+
   // Use real-time stock if available, fallback to passed stock prop
   const availableStock =
     currentStock !== undefined ? currentStock : stock[selectedSize] || 0;
   const isOutOfStock = availableStock === 0;
   const isLowStock = availableStock > 0 && availableStock <= 5;
 
-  // If compact mode, only show the button
+  // If compact mode, show stepper when product is in cart
   if (compact) {
+    if (totalQty > 0) {
+      return (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleDecrement}
+              disabled={!currentSizeItem}
+              variant="outline"
+              size={size}
+              className="flex-1"
+            >
+              −
+            </Button>
+            <span className="min-w-[2rem] text-center text-sm font-semibold">
+              {totalQty}
+            </span>
+            <Button
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isAdding || stockLoading}
+              variant={variant}
+              size={size}
+              className="flex-1"
+            >
+              {isAdding ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600"></div>
+              ) : (
+                "+"
+              )}
+            </Button>
+          </div>
+          {/* Stock warning */}
+          {!stockLoading && (
+            <>
+              {isLowStock && !isOutOfStock && (
+                <p className="text-orange-600 text-xs text-center">
+                  Only {availableStock} left!
+                </p>
+              )}
+              {stockError && (
+                <p className="text-red-600 text-xs text-center">
+                  Unable to check stock
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-1">
         <Button
@@ -149,8 +214,6 @@ export function AddToCart({
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600"></div>
           ) : isAdding ? (
             <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600"></div>
-          ) : showSuccess ? (
-            <Check className="w-4 h-4 mr-2" />
           ) : isOutOfStock ? (
             <AlertTriangle className="w-4 h-4 mr-2" />
           ) : (
@@ -162,8 +225,6 @@ export function AddToCart({
             ? "Out of Stock"
             : isAdding
             ? "Adding..."
-            : showSuccess
-            ? "Added!"
             : "Add to Cart"}
         </Button>
 
@@ -253,8 +314,6 @@ export function AddToCart({
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600"></div>
         ) : isAdding ? (
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-gray-600"></div>
-        ) : showSuccess ? (
-          <Check className="w-4 h-4 mr-2" />
         ) : isOutOfStock ? (
           <AlertTriangle className="w-4 h-4 mr-2" />
         ) : (
@@ -266,8 +325,6 @@ export function AddToCart({
           ? "Out of Stock"
           : isAdding
           ? "Adding..."
-          : showSuccess
-          ? "Added!"
           : "Add to Cart"}
       </Button>
 
