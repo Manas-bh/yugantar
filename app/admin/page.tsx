@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { BannerManagement } from "@/components/admin/banner-management";
-import { SiteHeader } from "@/components/site-header";
 
 interface User {
   id: string;
@@ -78,6 +77,7 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [productsCount, setProductsCount] = useState(0);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [bannersLoading, setBannersLoading] = useState(true);
 
@@ -107,7 +107,11 @@ export default function AdminPage() {
         setUser(authUser);
 
         if (authUser.role === "admin") {
-          await Promise.all([fetchOrders(), fetchBanners()]);
+          await Promise.all([
+            fetchOrders(),
+            fetchBanners(),
+            fetchProductsCount(),
+          ]);
         } else {
           window.location.href =
             "/auth?callbackUrl=" + encodeURIComponent(window.location.pathname);
@@ -202,6 +206,21 @@ export default function AdminPage() {
     }
   };
 
+  const fetchProductsCount = async () => {
+    try {
+      const response = await fetch("/api/products?admin=true&limit=1", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (response.ok && typeof data.total === "number") {
+        setProductsCount(data.total);
+      }
+    } catch (error) {
+      console.error("Error fetching products count:", error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50  flex items-center justify-center">
@@ -273,7 +292,7 @@ export default function AdminPage() {
     },
     {
       title: "Products",
-      value: "156",
+      value: productsCount.toString(),
       change: "+2.4%",
       icon: <Package className="h-4 w-4" />,
       color: "text-orange-600",
@@ -283,26 +302,39 @@ export default function AdminPage() {
   // Get recent orders (last 5)
   const recentOrders = orders.slice(0, 5);
 
-  const topProducts = [
-    {
-      name: "Naruto Hokage Dreams",
-      sales: 234,
-      revenue: "₹9,32,264",
-      rating: 4.9,
-    },
-    { name: "This is Fine Dog", sales: 189, revenue: "₹7,37,289", rating: 4.8 },
-    { name: "Custom Designs", sales: 156, revenue: "₹7,12,140", rating: 4.7 },
-    {
-      name: "Drake Pointing Meme",
-      sales: 134,
-      revenue: "₹5,11,612",
-      rating: 4.6,
-    },
-  ];
+  const topProducts = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; sales: number; revenue: number }
+    >();
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        const existing = map.get(item.productId);
+        if (existing) {
+          existing.sales += item.quantity;
+          existing.revenue += item.price * item.quantity;
+        } else {
+          map.set(item.productId, {
+            name: item.title,
+            sales: item.quantity,
+            revenue: item.price * item.quantity,
+          });
+        }
+      });
+    });
+    return Array.from(map.values())
+      .map((p) => ({
+        name: p.name,
+        sales: p.sales,
+        revenue: `₹${p.revenue.toLocaleString("en-IN")}`,
+        rating: 4.0,
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4);
+  }, [orders]);
 
   return (
     <div className="min-h-screen bg-gray-50 ">
-      <SiteHeader showCart={false} />
 
       <div className="border-b border-gray-200 bg-white">
         <div className="px-6 py-3">
@@ -555,18 +587,22 @@ export default function AdminPage() {
               </Link>
               <Button
                 variant="outline"
-                className="h-20 flex-col bg-transparent"
+                className="h-20 flex-col bg-transparent w-full"
+                disabled
+                title="Coming soon"
               >
                 <Users className="h-6 w-6 mb-2" />
                 Manage Users
               </Button>
-              <Button
-                variant="outline"
-                className="h-20 flex-col bg-transparent"
-              >
-                <ShoppingBag className="h-6 w-6 mb-2" />
-                View Orders
-              </Button>
+              <Link href="/orders" className="contents">
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col bg-transparent w-full"
+                >
+                  <ShoppingBag className="h-6 w-6 mb-2" />
+                  View Orders
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

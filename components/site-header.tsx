@@ -1,25 +1,37 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { DynamicNavbar } from "@/components/dynamic-navbar";
 import { UserMenu } from "@/components/auth/user-menu";
 import { CartBadge } from "@/components/cart-badge";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-interface SiteHeaderProps {
-  currentPath?: string;
-  showCart?: boolean;
-}
+/**
+ * Site-wide header component.
+ *
+ * Automatically detects the current path for active-link highlighting
+ * and hides the cart badge on auth / admin routes.
+ *
+ * Placed once in the root layout — individual pages do NOT need to
+ * import or render this component.
+ */
+export function SiteHeader() {
+  const pathname = usePathname();
 
-export function SiteHeader({
-  currentPath = "",
-  showCart = true,
-}: SiteHeaderProps) {
+  // Hide cart on auth and admin routes
+  const hideCart =
+    !pathname ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/admin");
+
   return (
     <header className="app-shell sticky top-0 z-50 pt-3 sm:pt-4">
       <div className="section-shell overflow-hidden bg-card/95 backdrop-blur">
         <div className="flex h-16 items-center justify-between px-3 sm:h-[74px] sm:px-5">
           <div className="flex min-w-0 flex-1 items-center">
-            <DynamicNavbar currentPath={currentPath} />
+            <DynamicNavbar currentPath={pathname} />
           </div>
 
           <Link
@@ -39,7 +51,7 @@ export function SiteHeader({
               <Search className="h-4 w-4" />
             </Button>
             <UserMenu />
-            {showCart ? <CartBadge /> : null}
+            {!hideCart && <CartBadge />}
           </div>
         </div>
       </div>

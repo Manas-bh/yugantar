@@ -32,7 +32,6 @@ import {
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { getTotalStock, normalizeStock } from "@/lib/stock-normalization";
-import { SiteHeader } from "@/components/site-header";
 
 interface Product {
   _id: string;
@@ -79,6 +78,9 @@ export default function AdminProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imageUrlList, setImageUrlList] = useState<string[]>([]);
+  const [newImageUrlInput, setNewImageUrlInput] = useState<string>("");
+  const [imageUrlErrors, setImageUrlErrors] = useState<{ [url: string]: string }>({});
   const [formData, setFormData] = useState<
     ProductFormData & { categories: string[] }
   >({
@@ -201,6 +203,37 @@ export default function AdminProductsPage() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setSelectedImages(files);
+  };
+
+  const handleAddImageUrl = () => {
+    const trimmed = newImageUrlInput.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+      setImageUrlErrors({ [trimmed]: "URL must start with http:// or https://" });
+      return;
+    }
+    if (imageUrlList.includes(trimmed)) {
+      setImageUrlErrors({ [trimmed]: "This URL is already added" });
+      return;
+    }
+    const updated = [...imageUrlList, trimmed];
+    setImageUrlList(updated);
+    setFormData((prev) => ({ ...prev, imageUrls: updated.join(", ") }));
+    setNewImageUrlInput("");
+    setImageUrlErrors({});
+  };
+
+  const handleRemoveImageUrl = (urlToRemove: string) => {
+    const updated = imageUrlList.filter((url) => url !== urlToRemove);
+    setImageUrlList(updated);
+    setFormData((prev) => ({ ...prev, imageUrls: updated.join(", ") }));
+  };
+
+  const handleImageUrlInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddImageUrl();
+    }
   };
 
   const resetForm = () => {
@@ -448,7 +481,6 @@ export default function AdminProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SiteHeader showCart={false} />
 
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl px-6 py-3">

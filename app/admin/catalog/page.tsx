@@ -36,21 +36,16 @@ import {
   Save,
   X,
 } from "lucide-react";
-import { SiteHeader } from "@/components/site-header";
 import {
   getCategories,
-  getProducts,
   getNavbarConfig,
   createCategory,
   updateCategory,
   deleteCategory,
-  createProduct,
-  updateProduct,
-  deleteProduct,
   saveNavbarConfig,
   type Category,
-  type Product,
   type NavbarConfig,
+  type Product,
 } from "@/lib/catalog";
 import { getTotalStock, normalizeStock } from "@/lib/stock-normalization";
 
@@ -90,6 +85,7 @@ export default function AdminCatalogPage() {
     sizes: "XS,S,M,L,XL,2XL,3XL,4XL,5XL",
     colors: "White,Black,Navy,Red,Green",
     tags: "",
+    images: "",
   });
 
   useEffect(() => {
@@ -122,12 +118,20 @@ export default function AdminCatalogPage() {
     checkAuth();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     setIsLoading(true);
     try {
       setCategories(getCategories());
-      setProducts(getProducts());
       setNavbarConfig(getNavbarConfig());
+      // Fetch products from the API (which reads from Supabase), not localStorage
+      const response = await fetch(`/api/products?admin=true&limit=1000&_t=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.products || []);
+      }
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
@@ -176,29 +180,37 @@ export default function AdminCatalogPage() {
     }
   };
 
-  const handleCreateProduct = () => {
+  const handleCreateProduct = async () => {
     try {
       const sizes = productForm.sizes.split(",").map((s) => s.trim());
-      const productData = {
-        ...productForm,
-        images: ["/placeholder.svg?height=400&width=400"],
-        sizes,
-        colors: productForm.category.includes("custom")
-          ? productForm.colors
-              .split(",")
-              .map((c) => c.trim())
-              .filter(Boolean)
-          : [],
-        tags: productForm.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        stock: normalizeStock(productForm.stock, sizes),
-        rating: 4.5,
-        reviews: 0,
-      };
-      const newProduct = createProduct(productData);
-      setProducts([...products, newProduct]);
+      const formData = new FormData();
+      formData.append("name", productForm.name);
+      formData.append("slug", productForm.slug);
+      formData.append("description", productForm.description);
+      formData.append("price", productForm.price.toString());
+      if (productForm.originalPrice) {
+        formData.append("originalPrice", productForm.originalPrice.toString());
+      }
+      formData.append("category", productForm.category.join(","));
+      formData.append("tags", productForm.tags);
+      formData.append("sizes", productForm.sizes);
+      formData.append(
+        "sizeStock",
+        JSON.stringify(normalizeStock(productForm.stock, sizes))
+      );
+      formData.append("imageUrls", productForm.images);
+      formData.append("isFeatured", productForm.isFeatured.toString());
+      if (productForm.category.includes("custom")) {
+        formData.append("colors", productForm.colors);
+      }
+
+      const response = await fetch("/api/products/admin", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Create failed");
+      await loadData();
       setProductDialog(false);
       resetProductForm();
     } catch (error) {
@@ -206,49 +218,61 @@ export default function AdminCatalogPage() {
     }
   };
 
-  const handleUpdateProduct = () => {
+  const handleUpdateProduct = async () => {
     if (!editingProduct) return;
 
     try {
       const sizes = productForm.sizes.split(",").map((s) => s.trim());
-      const productData = {
-        ...productForm,
-        sizes,
-        colors: productForm.category.includes("custom")
-          ? productForm.colors
-              .split(",")
-              .map((c) => c.trim())
-              .filter(Boolean)
-          : [],
-        tags: productForm.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        stock: normalizeStock(productForm.stock, sizes),
-      };
-      const updated = updateProduct(editingProduct.id, productData);
-      if (updated) {
-        setProducts(
-          products.map((prod) => (prod.id === updated.id ? updated : prod))
-        );
-        setProductDialog(false);
-        resetProductForm();
-        setEditingProduct(null);
+      const formData = new FormData();
+      formData.append("productId", editingProduct.id);
+      formData.append("name", productForm.name);
+      formData.append("slug", productForm.slug);
+      formData.append("description", productForm.description);
+      formData.append("price", productForm.price.toString());
+      if (productForm.originalPrice) {
+        formData.append("originalPrice", productForm.originalPrice.toString());
       }
+      formData.append("category", productForm.category.join(","));
+      formData.append("tags", productForm.tags);
+      formData.append("sizes", productForm.sizes);
+      formData.append(
+        "sizeStock",
+        JSON.stringify(normalizeStock(productForm.stock, sizes))
+      );
+      formData.append("imageUrls", productForm.images);
+      formData.append("isFeatured", productForm.isFeatured.toString());
+      formData.append("isActive", productForm.isActive.toString());
+      formData.append("keepExistingImages", "true");
+      if (productForm.category.includes("custom")) {
+        formData.append("colors", productForm.colors);
+      }
+
+      const response = await fetch("/api/products/admin", {
+        method: "PUT",
+        credentials: "include",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Update failed");
+      await loadData();
+      setProductDialog(false);
+      resetProductForm();
+      setEditingProduct(null);
     } catch (error) {
       console.error("Failed to update product:", error);
     }
   };
 
-  const handleDeleteProduct = (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      try {
-        if (deleteProduct(id)) {
-          setProducts(products.filter((prod) => prod.id !== id));
-        }
-      } catch (error) {
-        console.error("Failed to delete product:", error);
-      }
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    try {
+      const response = await fetch(`/api/products/admin?id=${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Delete failed");
+      await loadData();
+    } catch (error) {
+      console.error("Failed to delete product:", error);
     }
   };
 
@@ -295,6 +319,7 @@ export default function AdminCatalogPage() {
       sizes: "XS,S,M,L,XL,2XL,3XL,4XL,5XL",
       colors: "White,Black,Navy,Red,Green",
       tags: "",
+      images: "",
     });
   };
 
@@ -325,6 +350,7 @@ export default function AdminCatalogPage() {
       sizes: product.sizes.join(","),
       colors: product.colors.join(","),
       tags: product.tags.join(","),
+      images: product.images.join(","),
     });
     setProductDialog(true);
   };
@@ -354,7 +380,6 @@ export default function AdminCatalogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 ">
-      <SiteHeader showCart={false} />
 
       <div className="border-b border-gray-200 bg-white">
         <div className="px-6 py-3">
@@ -779,6 +804,23 @@ export default function AdminCatalogPage() {
                             })
                           }
                           placeholder="anime,naruto,manga"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="images">
+                          Images (comma-separated URLs, leave empty for placeholder)
+                        </Label>
+                        <Textarea
+                          id="images"
+                          value={productForm.images}
+                          onChange={(e) =>
+                            setProductForm({
+                              ...productForm,
+                              images: e.target.value,
+                            })
+                          }
+                          placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                          rows={2}
                         />
                       </div>
                       <div className="flex items-center space-x-4">

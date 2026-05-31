@@ -14,6 +14,25 @@ export interface CategoryRecord {
 
 const CATEGORIES_TABLE = "categories";
 
+export async function findCategoryBySlug(slug: string): Promise<CategoryRecord | null> {
+  if (!process.env.SUPABASE_URL) {
+    throw new SupabaseConfigError();
+  }
+
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from(CATEGORIES_TABLE)
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle<CategoryRecord>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data || null;
+}
+
 export async function listCategories(): Promise<CategoryRecord[]> {
   if (!process.env.SUPABASE_URL) {
     throw new SupabaseConfigError();
