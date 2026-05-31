@@ -171,7 +171,7 @@ export function AddToCart({
             <Button
               onClick={handleAddToCart}
               disabled={isOutOfStock || isAdding || stockLoading}
-              variant={variant}
+              variant="outline"
               size={size}
               className="flex-1"
             >
