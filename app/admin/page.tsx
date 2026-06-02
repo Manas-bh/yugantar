@@ -221,6 +221,37 @@ export default function AdminPage() {
     }
   };
 
+  const topProducts = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; sales: number; revenue: number }
+    >();
+    orders.forEach((order) => {
+      order.items.forEach((item) => {
+        const existing = map.get(item.productId);
+        if (existing) {
+          existing.sales += item.quantity;
+          existing.revenue += item.price * item.quantity;
+        } else {
+          map.set(item.productId, {
+            name: item.title,
+            sales: item.quantity,
+            revenue: item.price * item.quantity,
+          });
+        }
+      });
+    });
+    return Array.from(map.values())
+      .map((p) => ({
+        name: p.name,
+        sales: p.sales,
+        revenue: `₹${p.revenue.toLocaleString("en-IN")}`,
+        rating: 4.0,
+      }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4);
+  }, [orders]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50  flex items-center justify-center">
@@ -300,39 +331,6 @@ export default function AdminPage() {
   ];
 
   // Get recent orders (last 5)
-  const recentOrders = orders.slice(0, 5);
-
-  const topProducts = useMemo(() => {
-    const map = new Map<
-      string,
-      { name: string; sales: number; revenue: number }
-    >();
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
-        const existing = map.get(item.productId);
-        if (existing) {
-          existing.sales += item.quantity;
-          existing.revenue += item.price * item.quantity;
-        } else {
-          map.set(item.productId, {
-            name: item.title,
-            sales: item.quantity,
-            revenue: item.price * item.quantity,
-          });
-        }
-      });
-    });
-    return Array.from(map.values())
-      .map((p) => ({
-        name: p.name,
-        sales: p.sales,
-        revenue: `₹${p.revenue.toLocaleString("en-IN")}`,
-        rating: 4.0,
-      }))
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 4);
-  }, [orders]);
-
   return (
     <div className="min-h-screen bg-gray-50 ">
 
@@ -351,7 +349,7 @@ export default function AdminPage() {
             Welcome back, Admin! 👋
           </h1>
           <p className="text-gray-600 ">
-            Here's what's happening with Yugantar today.
+            Here&apos;s what&apos;s happening with Yugantar today.
           </p>
         </div>
 
