@@ -135,7 +135,7 @@ export default function AdminCatalogPage() {
       });
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products || []);
+        setProducts((data.data || data).products || []);
       }
     } catch (error) {
       console.error("Failed to load data:", error);

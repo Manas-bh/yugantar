@@ -94,8 +94,9 @@ export function CategoryPageLayout({
           throw new Error("Failed to fetch products");
         }
         const data = await response.json();
-        const fetchedProducts: Product[] = Array.isArray(data.products)
-          ? data.products
+        const productsPayload = data.data || data;
+        const fetchedProducts: Product[] = Array.isArray(productsPayload.products)
+          ? productsPayload.products
           : [];
 
         setProducts(fetchedProducts);

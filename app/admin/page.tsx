@@ -213,8 +213,11 @@ export default function AdminPage() {
         credentials: "include",
       });
       const data = await response.json();
-      if (response.ok && typeof data.total === "number") {
-        setProductsCount(data.total);
+      if (response.ok) {
+        const payload = data.data || data;
+        if (typeof payload.total === "number") {
+          setProductsCount(payload.total);
+        }
       }
     } catch (error) {
       console.error("Error fetching products count:", error);

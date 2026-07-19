@@ -39,8 +39,9 @@ export function DynamicFeaturedProducts() {
       }
 
       const data = await response.json();
-      const fetchedProducts: ApiProduct[] = Array.isArray(data.products)
-        ? data.products
+      const productsPayload = data.data || data;
+      const fetchedProducts: ApiProduct[] = Array.isArray(productsPayload.products)
+        ? productsPayload.products
         : [];
 
       setProducts(fetchedProducts);
