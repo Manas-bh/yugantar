@@ -29,6 +29,9 @@ yarn-error.log*
 cookies.txt
 admin_cookies.txt
 
+# kimchi ai tool cache
+.kimchi/
+
 # vercel
 .vercel
 
