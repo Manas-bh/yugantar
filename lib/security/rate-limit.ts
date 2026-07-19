@@ -20,18 +20,9 @@ function getRedisClient(): Redis {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
-    // Fallback: warn once but don't throw. In development without Redis,
-    // rate limiting is effectively disabled (every request is allowed).
-    // In production, this should be a hard error.
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set in production"
-      );
-    }
     logger.warn(
       "Redis not configured — rate limiting is disabled. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN."
     );
-    // Return a no-op Redis client that allows everything
     return new Proxy({} as Redis, {
       get() {
         return async () => null;

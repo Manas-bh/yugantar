@@ -1,7 +1,7 @@
 import type { IProduct } from "@/lib/domain/types";
 import type { ProductRecord } from "@/lib/data/types";
 import { mapProductRecordToIProduct } from "@/lib/data/mappers";
-import { getSupabaseAdminClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient, ensureSupabaseConfigured } from "@/lib/supabase/server";
 
 const PRODUCTS_TABLE = "products";
 
