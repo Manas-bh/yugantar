@@ -5,14 +5,12 @@ import {
 } from "@/lib/data/mappers";
 import type { IUser } from "@/lib/domain/types";
 import type { UserRecord, UserRole, AuthProvider } from "@/lib/data/types";
-import { SupabaseConfigError } from "@/lib/supabase/server";
+import { ensureSupabaseConfigured } from "@/lib/supabase/server";
 
 const USERS_TABLE = "users";
 
 export async function findUserById(id: string): Promise<IUser | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -29,9 +27,7 @@ export async function findUserById(id: string): Promise<IUser | null> {
 }
 
 export async function findUserByEmail(email: string): Promise<IUser | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -59,9 +55,7 @@ export async function createUserRecord(input: {
   googleId?: string;
   isEmailVerified?: boolean;
 }): Promise<IUser> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload = mapIUserCreateToUserInsert(input);
@@ -80,9 +74,7 @@ export async function createUserRecord(input: {
 }
 
 export async function updateUserLastLoginAt(userId: string): Promise<void> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase
@@ -100,9 +92,7 @@ export async function ensureDefaultAdminUser(input: {
   name: string;
   passwordHash: string;
 }): Promise<void> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload = {

@@ -1,8 +1,6 @@
 import { logger } from "@/lib/logger";
-import {
-  findProductById,
-  updateProductStockById,
-} from "@/lib/data/products";
+import { updateProductStockById } from "@/lib/data/stock";
+import { findProductById } from "@/lib/data/products";
 import { IOrderItem } from "@/lib/domain/types";
 
 /**

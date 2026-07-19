@@ -20,6 +20,12 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
+export function ensureSupabaseConfigured(): void {
+  if (!isSupabaseConfigured()) {
+    throw new SupabaseConfigError();
+  }
+}
+
 export function getSupabaseAdminClient(): SupabaseClient {
   if (cachedSupabaseAdminClient) {
     return cachedSupabaseAdminClient;

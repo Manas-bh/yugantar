@@ -1,5 +1,5 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
-import { SupabaseConfigError } from "@/lib/supabase/server";
+import { ensureSupabaseConfigured } from "@/lib/supabase/server";
 
 export interface CategoryRecord {
   id: string;
@@ -15,9 +15,7 @@ export interface CategoryRecord {
 const CATEGORIES_TABLE = "categories";
 
 export async function findCategoryBySlug(slug: string): Promise<CategoryRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -34,9 +32,7 @@ export async function findCategoryBySlug(slug: string): Promise<CategoryRecord |
 }
 
 export async function listCategories(): Promise<CategoryRecord[]> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -60,9 +56,7 @@ export async function createCategoryRecord(input: {
   isActive: boolean;
   order: number;
 }): Promise<CategoryRecord> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload = {
@@ -97,9 +91,7 @@ export async function updateCategoryRecord(
     order: number;
   }>
 ): Promise<CategoryRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload: Record<string, unknown> = {};
@@ -125,9 +117,7 @@ export async function updateCategoryRecord(
 }
 
 export async function deleteCategoryRecord(id: string): Promise<boolean> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error, count } = await supabase

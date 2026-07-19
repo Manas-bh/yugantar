@@ -1,4 +1,4 @@
-import { getSupabaseAdminClient, SupabaseConfigError } from "@/lib/supabase/server";
+import { getSupabaseAdminClient, ensureSupabaseConfigured } from "@/lib/supabase/server";
 import type { AuthEmailOtpRecord } from "@/lib/data/types";
 
 const AUTH_EMAIL_OTPS_TABLE = "auth_email_otps";
@@ -14,9 +14,7 @@ type UpsertAuthEmailOtpInput = {
 export async function upsertAuthEmailOtp(
   input: UpsertAuthEmailOtpInput
 ): Promise<AuthEmailOtpRecord> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload = {
@@ -62,9 +60,7 @@ export async function upsertAuthEmailOtp(
 export async function findAuthEmailOtpByEmail(
   email: string
 ): Promise<AuthEmailOtpRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -86,9 +82,7 @@ export async function incrementAuthEmailOtpAttemptById(
   id: string,
   nextAttemptCount: number
 ): Promise<void> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase
@@ -105,9 +99,7 @@ export async function updateAuthEmailOtpForResendById(
   id: string,
   input: { otpHash: string; expiresAt: string; nextResendCount: number }
 ): Promise<void> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase
@@ -127,9 +119,7 @@ export async function updateAuthEmailOtpForResendById(
 }
 
 export async function deleteAuthEmailOtpById(id: string): Promise<void> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase

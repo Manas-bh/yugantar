@@ -79,9 +79,7 @@ export async function countProducts(filters: {
 }
 
 export async function listProducts(filters: ProductListFilters = {}): Promise<IProduct[]> {
-  if (!process.env.SUPABASE_URL) {
-    return [];
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   let query = supabase.from(PRODUCTS_TABLE).select("*");
@@ -119,9 +117,7 @@ export async function listProducts(filters: ProductListFilters = {}): Promise<IP
 }
 
 export async function clearAllProducts(): Promise<number> {
-  if (!process.env.SUPABASE_URL) {
-    return 0;
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error, count } = await supabase
@@ -219,7 +215,6 @@ export async function updateProductById(
   if (updates.tags !== undefined) payload.tags = updates.tags;
   if (updates.sizes !== undefined) payload.sizes = updates.sizes;
   if (updates.colors !== undefined) payload.colors = updates.colors;
-  if (updates.stock !== undefined) payload.stock = updates.stock;
   if (updates.isFeatured !== undefined) payload.is_featured = updates.isFeatured;
   if (updates.isActive !== undefined) payload.is_active = updates.isActive;
   if (updates.rating !== undefined) payload.rating = updates.rating;
@@ -251,23 +246,4 @@ export async function deleteProductById(productId: string): Promise<boolean> {
   }
 
   return (count || 0) > 0;
-}
-
-export async function updateProductStockById(
-  productId: string,
-  stock: Record<string, number>
-): Promise<IProduct | null> {
-  const supabase = getSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from(PRODUCTS_TABLE)
-    .update({ stock })
-    .eq("id", productId)
-    .select("*")
-    .maybeSingle<ProductRecord>();
-
-  if (error) {
-    throw error;
-  }
-
-  return data ? mapProductRecordToIProduct(data) : null;
 }

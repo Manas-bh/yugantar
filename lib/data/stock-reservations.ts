@@ -7,27 +7,24 @@ export function getReservationExpiry(): Date {
   return new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000);
 }
 
+export type OutOfStockItem = {
+  productId: string;
+  size: string;
+  requestedQty: number;
+  availableQty: number;
+};
+
+export type ReserveStockResult =
+  | { success: true; expiresAt: string }
+  | { success: false; expiresAt: string; outOfStockItems: OutOfStockItem[] };
+
 export async function reserveStockForOrder(
   orderId: string,
   items: Array<{ productId: string; size: string; quantity: number }>
-): Promise<{
-  success: boolean;
-  expiresAt: string;
-  outOfStockItems?: Array<{
-    productId: string;
-    size: string;
-    requestedQty: number;
-    availableQty: number;
-  }>;
-}> {
+): Promise<ReserveStockResult> {
   const supabase = getSupabaseAdminClient();
   const expiresAt = getReservationExpiry().toISOString();
-  const outOfStockItems: Array<{
-    productId: string;
-    size: string;
-    requestedQty: number;
-    availableQty: number;
-  }> = [];
+  const outOfStockItems: OutOfStockItem[] = [];
 
   for (const item of items) {
     const { data, error } = await supabase.rpc("reserve_stock", {
@@ -40,13 +37,7 @@ export async function reserveStockForOrder(
 
     if (error) {
       logger.error({ err: error, orderId, item }, "RPC reserve_stock failed");
-      outOfStockItems.push({
-        productId: item.productId,
-        size: item.size,
-        requestedQty: item.quantity,
-        availableQty: 0,
-      });
-      continue;
+      throw error;
     }
 
     if (data && !data.success) {
@@ -68,9 +59,7 @@ export async function reserveStockForOrder(
   return { success: true, expiresAt };
 }
 
-export async function convertReservation(
-  orderId: string
-): Promise<{ success: boolean; message?: string }> {
+export async function convertReservation(orderId: string): Promise<string> {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase.rpc("convert_reservation", {
     p_order_id: orderId,
@@ -78,19 +67,17 @@ export async function convertReservation(
 
   if (error) {
     logger.error({ err: error, orderId }, "RPC convert_reservation failed");
-    return { success: false, message: error.message };
+    throw error;
   }
 
   if (data && !data.success) {
-    return { success: false, message: data.message };
+    throw new Error(data.message || "Stock conversion failed");
   }
 
-  return { success: true, message: data?.message };
+  return data?.message ?? "Converted successfully";
 }
 
-export async function releaseReservation(
-  orderId: string
-): Promise<{ success: boolean; released?: number }> {
+export async function releaseReservation(orderId: string): Promise<number> {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase.rpc("release_reservation", {
     p_order_id: orderId,
@@ -98,13 +85,10 @@ export async function releaseReservation(
 
   if (error) {
     logger.error({ err: error, orderId }, "RPC release_reservation failed");
-    return { success: false };
+    throw error;
   }
 
-  return {
-    success: true,
-    released: data?.released || 0,
-  };
+  return data?.released ?? 0;
 }
 
 export async function releaseExpiredReservations(): Promise<number> {
@@ -113,10 +97,10 @@ export async function releaseExpiredReservations(): Promise<number> {
 
   if (error) {
     logger.error({ err: error }, "Failed to release expired reservations");
-    return 0;
+    throw error;
   }
 
-  return data || 0;
+  return data ?? 0;
 }
 
 export async function getAvailableStock(
@@ -131,8 +115,8 @@ export async function getAvailableStock(
 
   if (error) {
     logger.error({ err: error, productId, size }, "RPC available_stock failed");
-    return 0;
+    throw error;
   }
 
-  return data || 0;
+  return data ?? 0;
 }

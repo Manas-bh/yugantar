@@ -8,6 +8,7 @@ import {
   listProducts,
   updateProductById,
 } from "@/lib/data/products";
+import { updateProductStockById } from "@/lib/data/stock";
 import {
   isSupabaseConfigured,
   SupabaseConfigError,
@@ -783,9 +784,9 @@ export async function PUT(request: NextRequest) {
           images: productData.images,
           description: productData.description,
           tags: productData.tags,
-          stock: updatedStock,
           isFeatured: productData.isFeatured,
         });
+        await updateProductStockById(existingProduct._id.toString(), updatedStock);
         updatedCount++;
       }
     }

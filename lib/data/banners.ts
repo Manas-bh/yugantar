@@ -1,5 +1,5 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
-import { SupabaseConfigError } from "@/lib/supabase/server";
+import { ensureSupabaseConfigured } from "@/lib/supabase/server";
 
 export type BannerPosition =
   | "home_hero"
@@ -31,9 +31,7 @@ export async function listBanners(filters: {
   isActive?: boolean;
   limit?: number;
 }): Promise<BannerRecord[]> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   let query = supabase.from(BANNERS_TABLE).select("*");
@@ -64,9 +62,7 @@ export async function listBanners(filters: {
 }
 
 export async function findBannerById(id: string): Promise<BannerRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -94,9 +90,7 @@ export async function createBannerRecord(input: {
   order: number;
   isActive: boolean;
 }): Promise<BannerRecord> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload = {
@@ -140,9 +134,7 @@ export async function updateBannerRecord(
     isActive: boolean;
   }>
 ): Promise<BannerRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload: Record<string, unknown> = {};
@@ -173,9 +165,7 @@ export async function updateBannerRecord(
 }
 
 export async function deleteBannerRecord(id: string): Promise<boolean> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error, count } = await supabase

@@ -1,5 +1,5 @@
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
-import { SupabaseConfigError } from "@/lib/supabase/server";
+import { ensureSupabaseConfigured } from "@/lib/supabase/server";
 
 export interface CartItemRecord {
   productId: string;
@@ -24,9 +24,7 @@ export interface CartRecord {
 const CARTS_TABLE = "carts";
 
 export async function findCartByUserId(userId: string): Promise<CartRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -45,9 +43,7 @@ export async function findCartByUserId(userId: string): Promise<CartRecord | nul
 export async function findCartBySessionId(
   sessionId: string
 ): Promise<CartRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -68,9 +64,7 @@ export async function createCart(input: {
   sessionId?: string;
   items?: CartItemRecord[];
 }): Promise<CartRecord> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload = {
@@ -100,9 +94,7 @@ export async function updateCartById(
     items: CartItemRecord[];
   }>
 ): Promise<CartRecord | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload: Record<string, unknown> = {};
@@ -126,9 +118,7 @@ export async function updateCartById(
 }
 
 export async function deleteCartById(cartId: string): Promise<boolean> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error, count } = await supabase
@@ -144,9 +134,7 @@ export async function deleteCartById(cartId: string): Promise<boolean> {
 }
 
 export async function deleteCartBySessionId(sessionId: string): Promise<boolean> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { error, count } = await supabase

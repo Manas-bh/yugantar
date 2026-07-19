@@ -6,7 +6,7 @@ import {
   toRecordPaymentStatus,
 } from "@/lib/data/mappers";
 import { getSupabaseAdminClient } from "@/lib/supabase/server";
-import { SupabaseConfigError } from "@/lib/supabase/server";
+import { ensureSupabaseConfigured } from "@/lib/supabase/server";
 
 const ORDERS_TABLE = "orders";
 
@@ -27,9 +27,7 @@ export async function createOrderRecord(input: {
   tax?: number;
   total: number;
 }): Promise<IOrder> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
 
@@ -55,9 +53,7 @@ export async function createOrderRecord(input: {
 }
 
 export async function findOrderByOrderId(orderId: string): Promise<IOrder | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -77,9 +73,7 @@ export async function findOrderByOrderIdForUser(
   orderId: string,
   userId: string
 ): Promise<IOrder | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -97,9 +91,7 @@ export async function findOrderByOrderIdForUser(
 }
 
 export async function findOrdersByUserId(userId: string): Promise<IOrder[]> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -117,9 +109,7 @@ export async function findOrdersByUserId(userId: string): Promise<IOrder[]> {
 }
 
 export async function findAllOrders(): Promise<IOrder[]> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -145,9 +135,7 @@ export async function updateOrderByOrderIdForUser(
     cancelledAt?: string;
   }
 ): Promise<IOrder | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
 
@@ -193,9 +181,7 @@ export async function updateOrderByOrderId(
     cancelledAt?: string;
   }
 ): Promise<IOrder | null> {
-  if (!process.env.SUPABASE_URL) {
-    throw new SupabaseConfigError();
-  }
+  ensureSupabaseConfigured();
 
   const supabase = getSupabaseAdminClient();
   const payload: Record<string, unknown> = {};
