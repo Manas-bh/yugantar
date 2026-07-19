@@ -330,7 +330,7 @@ export default function AdminPage() {
     },
   ];
 
-  // Get recent orders (last 5)
+  const recentOrders = orders.slice(0, 5);
   return (
     <div className="min-h-screen bg-gray-50 ">
 
