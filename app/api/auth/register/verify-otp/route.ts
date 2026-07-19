@@ -21,6 +21,7 @@ function getClientIp(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "auth:register:verify-otp" });
   try {
     const { data: body, error: validationError } = await validateBody(request, otpVerifyBodySchema);
     if (validationError) {
@@ -37,8 +38,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!verifyRateLimit.allowed) {
+      log.warn({ clientIp, email: normalizedEmail }, "Rate limit hit for OTP verify");
       return NextResponse.json(
-        { error: "Too many verification attempts. Please try again later." },
+        {
+          success: false,
+          error: "Too many verification attempts. Please try again later.",
+          code: "RATE_LIMITED",
+        },
         {
           status: 429,
           headers: {
@@ -50,14 +56,14 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedEmail || !otpValue) {
       return NextResponse.json(
-        { error: "Email and OTP are required" },
+        { success: false, error: "Email and OTP are required" },
         { status: 400 }
       );
     }
 
     if (!isValidOtpFormat(otpValue)) {
       return NextResponse.json(
-        { error: "OTP must be a 6-digit code" },
+        { success: false, error: "OTP must be a 6-digit code" },
         { status: 400 }
       );
     }
@@ -65,7 +71,7 @@ export async function POST(request: NextRequest) {
     const pending = await findAuthEmailOtpByEmail(normalizedEmail);
     if (!pending) {
       return NextResponse.json(
-        { error: "No pending signup found for this email" },
+        { success: false, error: "No pending signup found for this email" },
         { status: 404 }
       );
     }
@@ -73,7 +79,7 @@ export async function POST(request: NextRequest) {
     if (new Date(pending.expires_at).getTime() <= Date.now()) {
       await deleteAuthEmailOtpById(pending.id);
       return NextResponse.json(
-        { error: "OTP has expired. Please request a new code." },
+        { success: false, error: "OTP has expired. Please request a new code." },
         { status: 400 }
       );
     }
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest) {
     if (pending.attempt_count >= MAX_OTP_ATTEMPTS) {
       await deleteAuthEmailOtpById(pending.id);
       return NextResponse.json(
-        { error: "Maximum OTP attempts exceeded. Please sign up again." },
+        { success: false, error: "Maximum OTP attempts exceeded. Please sign up again." },
         { status: 429 }
       );
     }
@@ -90,7 +96,7 @@ export async function POST(request: NextRequest) {
     if (candidateHash !== pending.otp_hash) {
       await incrementAuthEmailOtpAttemptById(pending.id, pending.attempt_count + 1);
       return NextResponse.json(
-        { error: "Invalid OTP" },
+        { success: false, error: "Invalid OTP" },
         { status: 401 }
       );
     }
@@ -107,6 +113,8 @@ export async function POST(request: NextRequest) {
     await deleteAuthEmailOtpById(pending.id);
 
     const token = await createJWT(user);
+    log.info({ userId: user._id.toString() }, "Registration complete");
+
     const response = NextResponse.json({
       success: true,
       user: {
@@ -123,14 +131,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Authentication service is temporarily unavailable" },
+        { success: false, error: "Authentication service is temporarily unavailable" },
         { status: 503 }
       );
     }
 
-    logger.error("Verify OTP error:", error);
+    log.error({ err: error }, "Verify OTP error");
     return NextResponse.json(
-      { error: "Internal server error" },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
   }

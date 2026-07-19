@@ -6,14 +6,14 @@ import { logger } from "@/lib/logger";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const log = logger.child({ handler: "categories:get" });
   try {
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ categories: [] });
+      return NextResponse.json({ success: true, data: { categories: [] } });
     }
 
     const categories = await listCategories();
 
-    // Return in shape compatible with lib/catalog.ts Category interface
     const normalizedCategories = categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
@@ -23,14 +23,19 @@ export async function GET() {
       order: cat.order,
     }));
 
-    return NextResponse.json({ categories: normalizedCategories });
+    log.info({ count: categories.length }, "Categories fetched");
+
+    return NextResponse.json({
+      success: true,
+      data: { categories: normalizedCategories },
+    });
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
-      return NextResponse.json({ categories: [] });
+      return NextResponse.json({ success: true, data: { categories: [] } });
     }
-    logger.error("Error fetching categories:", error);
+    log.error({ err: error }, "Error fetching categories");
     return NextResponse.json(
-      { error: "Failed to fetch categories" },
+      { success: false, error: "Failed to fetch categories" },
       { status: 500 }
     );
   }

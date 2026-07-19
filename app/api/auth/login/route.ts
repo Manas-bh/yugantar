@@ -11,6 +11,7 @@ import {
 import { checkRateLimit } from "@/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "auth:login" });
   try {
     const { data: body, error: validationError } = await validateBody(
       request,
@@ -33,9 +34,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!rateLimit.allowed) {
+      log.warn({ clientIp, email: normalizedEmail }, "Rate limit hit for login");
       return NextResponse.json(
         {
+          success: false,
           error: "Too many login attempts. Please try again later.",
+          code: "RATE_LIMITED",
         },
         {
           status: 429,
@@ -48,13 +52,16 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedEmail || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { success: false, error: "Email and password are required" },
         { status: 400 }
       );
     }
 
     if (!isValidEmail(normalizedEmail)) {
-      return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: "Invalid email format" },
+        { status: 400 }
+      );
     }
 
     const user = await authenticateUser(normalizedEmail, password);
@@ -66,25 +73,32 @@ export async function POST(request: NextRequest) {
         !existingUser.isEmailVerified
       ) {
         return NextResponse.json(
-          { error: "Please verify your email with OTP before signing in" },
+          {
+            success: false,
+            error: "Please verify your email with OTP before signing in",
+          },
           { status: 403 }
         );
       }
 
       return NextResponse.json(
-        { error: "Invalid email or password" },
+        { success: false, error: "Invalid email or password" },
         { status: 401 }
       );
     }
 
     if (user.provider === "email" && !user.isEmailVerified) {
       return NextResponse.json(
-        { error: "Please verify your email with OTP before signing in" },
+        {
+          success: false,
+          error: "Please verify your email with OTP before signing in",
+        },
         { status: 403 }
       );
     }
 
     const token = await createJWT(user);
+    log.info({ userId: user._id.toString() }, "Login successful");
 
     const response = NextResponse.json({
       success: true,
@@ -97,14 +111,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Set HTTP-only cookie
     response.cookies.set("auth_token", token, getAuthCookieOptions());
 
     return response;
   } catch (error) {
-    logger.error("Login error:", error);
+    log.error({ err: error }, "Login error");
     return NextResponse.json(
-      { error: "Internal server error" },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
   }

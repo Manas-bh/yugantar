@@ -15,17 +15,16 @@ import {
 
 export const dynamic = "force-dynamic";
 
-// GET /api/cart - Get cart items
 export async function GET(request: NextRequest) {
+  const log = logger.child({ handler: "cart:get" });
   try {
     if (!isSupabaseConfigured()) {
-      return NextResponse.json({ items: [], totalItems: 0 });
+      return NextResponse.json({ success: true, data: { items: [], totalItems: 0 } });
     }
 
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
 
-    // Get user from token if available
     const token = request.cookies.get("auth_token")?.value;
     let userId: string | null = null;
 
@@ -33,7 +32,7 @@ export async function GET(request: NextRequest) {
       try {
         const user = await getUserFromToken(token);
         userId = user?._id.toString() || null;
-      } catch (error) {
+      } catch {
         // Token invalid, continue as guest
       }
     }
@@ -41,10 +40,8 @@ export async function GET(request: NextRequest) {
     let cart = null;
 
     if (userId) {
-      // Look for user cart first
       cart = await findCartByUserId(userId);
 
-      // If user has no cart but has session cart, migrate it
       if (!cart && sessionId) {
         const sessionCart = await findCartBySessionId(sessionId);
         if (sessionCart) {
@@ -55,36 +52,40 @@ export async function GET(request: NextRequest) {
         }
       }
     } else if (sessionId) {
-      // Guest user
       cart = await findCartBySessionId(sessionId);
     }
 
+    log.info({ userId, sessionId, itemCount: cart?.items?.length ?? 0 }, "Cart fetched");
+
     return NextResponse.json({
-      items: cart?.items || [],
-      totalItems:
-        cart?.items.reduce(
-          (sum: number, item: CartItemRecord) => sum + item.quantity,
-          0
-        ) || 0,
+      success: true,
+      data: {
+        items: cart?.items || [],
+        totalItems:
+          cart?.items.reduce(
+            (sum: number, item: CartItemRecord) => sum + item.quantity,
+            0
+          ) || 0,
+      },
     });
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
-      return NextResponse.json({ items: [], totalItems: 0 });
+      return NextResponse.json({ success: true, data: { items: [], totalItems: 0 } });
     }
-    logger.error("Error fetching cart:", error);
+    log.error({ err: error }, "Error fetching cart");
     return NextResponse.json(
-      { error: "Failed to fetch cart" },
+      { success: false, error: "Failed to fetch cart" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/cart - Update cart items
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "cart:update" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     if (!Array.isArray(items)) {
       return NextResponse.json(
-        { error: "Invalid cart items payload" },
+        { success: false, error: "Invalid cart items payload" },
         { status: 400 }
       );
     }
@@ -120,12 +121,11 @@ export async function POST(request: NextRequest) {
       )
     ) {
       return NextResponse.json(
-        { error: "Invalid cart item values" },
+        { success: false, error: "Invalid cart item values" },
         { status: 400 }
       );
     }
 
-    // Get user from token if available
     const token = request.cookies.get("auth_token")?.value;
     let userId: string | null = null;
 
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       try {
         const user = await getUserFromToken(token);
         userId = user?._id.toString() || null;
-      } catch (error) {
+      } catch {
         // Token invalid, continue as guest
       }
     }
@@ -141,13 +141,11 @@ export async function POST(request: NextRequest) {
     let cart = null;
 
     if (userId) {
-      // Find or create user cart
       cart = await findCartByUserId(userId);
       if (!cart) {
         cart = await createCart({ userId, items: [] });
       }
 
-      // Migrate session cart if exists
       if (sessionId) {
         const sessionCart = await findCartBySessionId(sessionId);
         if (sessionCart && !cart.items.length) {
@@ -157,46 +155,48 @@ export async function POST(request: NextRequest) {
         }
       }
     } else if (sessionId) {
-      // Guest user
       cart = await findCartBySessionId(sessionId);
       if (!cart) {
         cart = await createCart({ sessionId, items: [] });
       }
     } else {
       return NextResponse.json(
-        { error: "No session ID provided" },
+        { success: false, error: "No session ID provided" },
         { status: 400 }
       );
     }
 
-    // Update cart items
     cart = (await updateCartById(cart.id, { items })) || cart;
+
+    log.info({ userId, sessionId, itemCount: cart.items.length }, "Cart updated");
 
     return NextResponse.json({
       success: true,
-      items: cart.items,
-      totalItems: cart.items.reduce(
-        (sum: number, item: CartItemRecord) => sum + item.quantity,
-        0
-      ),
+      data: {
+        items: cart.items,
+        totalItems: cart.items.reduce(
+          (sum: number, item: CartItemRecord) => sum + item.quantity,
+          0
+        ),
+      },
     });
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
-    logger.error("Error updating cart:", error);
+    log.error({ err: error }, "Error updating cart");
     return NextResponse.json(
-      { error: "Failed to update cart" },
+      { success: false, error: "Failed to update cart" },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/cart - Clear cart
 export async function DELETE(request: NextRequest) {
+  const log = logger.child({ handler: "cart:clear" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json({ success: true });
@@ -205,7 +205,6 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
 
-    // Get user from token if available
     const token = request.cookies.get("auth_token")?.value;
     let userId: string | null = null;
 
@@ -213,7 +212,7 @@ export async function DELETE(request: NextRequest) {
       try {
         const user = await getUserFromToken(token);
         userId = user?._id.toString() || null;
-      } catch (error) {
+      } catch {
         // Token invalid, continue as guest
       }
     }
@@ -230,14 +229,16 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
+    log.info({ userId, sessionId }, "Cart cleared");
+
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ success: true });
     }
-    logger.error("Error clearing cart:", error);
+    log.error({ err: error }, "Error clearing cart");
     return NextResponse.json(
-      { error: "Failed to clear cart" },
+      { success: false, error: "Failed to clear cart" },
       { status: 500 }
     );
   }

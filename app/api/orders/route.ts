@@ -29,6 +29,7 @@ const ORDER_STATUSES = new Set([
 ]);
 
 export async function GET(request: NextRequest) {
+  const log = logger.child({ handler: "orders:get" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json({ success: true, orders: [] });
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json({ success: true, orders: [] });
     }
-    logger.error("Error fetching orders:", error);
+    log.error({ err: error }, "Error fetching orders");
     return NextResponse.json(
       { success: false, error: "Failed to fetch orders" },
       { status: 500 }
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const log = logger.child({ handler: "orders:update" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -219,7 +221,7 @@ export async function PUT(request: NextRequest) {
         { status: 503 }
       );
     }
-    logger.error("Error updating order:", error);
+    log.error({ err: error }, "Error updating order");
     return NextResponse.json(
       { success: false, error: "Failed to update order" },
       { status: 500 }

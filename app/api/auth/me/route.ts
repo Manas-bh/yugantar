@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
+        { success: false, error: "Too many requests. Please try again later.", code: "RATE_LIMITED" },
         {
           status: 429,
           headers: {
@@ -32,13 +32,15 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "No token provided" },
+        { status: 401 }
+      );
     }
 
-    // Check if token was invalidated via logout
     if (isTokenDenied(token)) {
       const response = NextResponse.json(
-        { error: "Token has been revoked" },
+        { success: false, error: "Token has been revoked" },
         { status: 401 }
       );
       response.cookies.set("auth_token", "", getExpiredAuthCookieOptions());
@@ -47,9 +49,8 @@ export async function GET(request: NextRequest) {
 
     const user = await getUserFromToken(token);
     if (!user) {
-      // Clear invalid cookie
       const response = NextResponse.json(
-        { error: "Invalid token" },
+        { success: false, error: "Invalid token" },
         { status: 401 }
       );
       response.cookies.set("auth_token", "", getExpiredAuthCookieOptions());
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
+      success: true,
       user: {
         id: user._id.toString(),
         email: user.email,
@@ -66,11 +68,10 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error("Auth check error:", error);
+    logger.error({ err: error }, "Auth check error");
 
-    // Clear invalid cookie on error
     const response = NextResponse.json(
-      { error: "Internal server error" },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
     response.cookies.set("auth_token", "", getExpiredAuthCookieOptions());

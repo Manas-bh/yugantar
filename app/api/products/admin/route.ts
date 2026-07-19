@@ -9,6 +9,7 @@ import {
   findProductBySlug,
   updateProductById,
 } from "@/lib/data/products";
+import { updateProductStockById } from "@/lib/data/stock";
 import {
   isSupabaseConfigured,
   SupabaseConfigError,
@@ -23,13 +24,11 @@ import { validateImageFiles } from "@/lib/security/upload";
 
 export const dynamic = "force-dynamic";
 
-// Auth check function
 async function checkAdminAuth(request: NextRequest) {
   const auth = await requireAdminUser(request);
   return auth.error || auth.user;
 }
 
-// Utility function to convert string to slug
 function createSlug(name: string): string {
   return name
     .toLowerCase()
@@ -39,48 +38,40 @@ function createSlug(name: string): string {
     .replace(/-+/g, "-");
 }
 
-// Utility function to extract public ID from Cloudinary URL
 function getPublicIdFromUrl(url: string): string {
   try {
-    // Handle both old and new Cloudinary URL formats
-    // Example: https://res.cloudinary.com/cloud/image/upload/v1234567890/folder/filename.jpg
     const parts = url.split("/");
     const uploadIndex = parts.findIndex((part) => part === "upload");
     if (uploadIndex !== -1 && uploadIndex + 2 < parts.length) {
-      // Skip 'upload' and version number, get the path after that
       const pathParts = parts.slice(uploadIndex + 2);
       const fullPath = pathParts.join("/");
-      // Remove file extension
       return fullPath.replace(/\.[^/.]+$/, "");
     }
-    // Fallback: just take filename without extension
     const filename = parts[parts.length - 1];
     return filename.split(".")[0];
   } catch (error) {
-    logger.warn("Error extracting public ID from URL:", url, error);
+    logger.warn({ err: error, url }, "Error extracting public ID from URL");
     return url;
   }
 }
 
-// POST /api/products/admin - Create new product
+// POST /api/products/admin
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "products:admin:create" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
 
-    // Check admin authentication
     const authResult = await checkAdminAuth(request);
     if (authResult instanceof NextResponse) {
-      return authResult; // Return error response if auth failed
+      return authResult;
     }
 
     const formData = await request.formData();
-
-    // Extract form fields
     const name = sanitizeName(formData.get("name"));
     const description = String(formData.get("description") || "").trim();
     const price = parsePrice(formData.get("price"));
@@ -92,22 +83,18 @@ export async function POST(request: NextRequest) {
     const sizes = normalizeStringList(formData.get("sizes"));
     const colors = normalizeStringList(formData.get("colors"));
 
-    // Parse sizeStock from JSON string
     const sizeStockString = formData.get("sizeStock") as string;
     let sizeStockData: Record<string, unknown> = {};
-
     try {
       sizeStockData = sizeStockString ? JSON.parse(sizeStockString) : {};
     } catch {
       return NextResponse.json(
-        { error: "Invalid stock data format" },
+        { success: false, error: "Invalid stock data format" },
         { status: 400 }
       );
     }
 
     const stock: { [size: string]: number } = {};
-
-    // Convert string values to numbers and ensure all sizes have stock
     sizes.forEach((size) => {
       const rawValue = sizeStockData[size];
       const parsedValue = Number.parseInt(String(rawValue ?? "0"), 10);
@@ -122,12 +109,11 @@ export async function POST(request: NextRequest) {
       (Number.isNaN(originalPrice) || originalPrice < 0)
     ) {
       return NextResponse.json(
-        { error: "Original price must be a valid non-negative number" },
+        { success: false, error: "Original price must be a valid non-negative number" },
         { status: 400 }
       );
     }
 
-    // Validate required fields
     if (
       !name ||
       !description ||
@@ -137,24 +123,20 @@ export async function POST(request: NextRequest) {
       !sizes.length
     ) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { success: false, error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Generate slug
     const slug = createSlug(name);
-
-    // Check if slug already exists
     const existingProduct = await findProductBySlug(slug);
     if (existingProduct) {
       return NextResponse.json(
-        { error: "A product with this name already exists" },
+        { success: false, error: "A product with this name already exists" },
         { status: 400 }
       );
     }
 
-    // Handle image uploads
     const imageFiles = formData.getAll("images") as File[];
     const validImageFiles = (imageFiles || []).filter(
       (file) => file && file.size > 0
@@ -163,7 +145,7 @@ export async function POST(request: NextRequest) {
     const imageValidation = validateImageFiles(validImageFiles);
     if (!imageValidation.valid) {
       return NextResponse.json(
-        { error: imageValidation.error || "Invalid images" },
+        { success: false, error: imageValidation.error || "Invalid images" },
         { status: 400 }
       );
     }
@@ -173,21 +155,19 @@ export async function POST(request: NextRequest) {
     if (hostedImageUrls.length > 0) {
       if (!validateImageUrls(hostedImageUrls)) {
         return NextResponse.json(
-          { error: "Invalid hosted image URLs" },
+          { success: false, error: "Invalid hosted image URLs" },
           { status: 400 }
         );
       }
-
       imageUrls.push(...hostedImageUrls);
     } else {
       for (const file of validImageFiles) {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const result = (await uploadImage(buffer, "tshirt-products")) as any;
+        const result = (await uploadImage(buffer, "tshirt-products")) as { secure_url: string };
         imageUrls.push(result.secure_url);
       }
     }
 
-    // Create product
     const product = await createProductRecord({
       name,
       slug,
@@ -206,45 +186,48 @@ export async function POST(request: NextRequest) {
       reviews: 0,
     });
 
+    log.info({ productId: product.id, name }, "Product created");
+
     return NextResponse.json(
-      { message: "Product created successfully", product },
+      {
+        success: true,
+        message: "Product created successfully",
+        data: { product },
+      },
       { status: 201 }
     );
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
-    logger.error("Error creating product:", error);
+    log.error({ err: error }, "Error creating product");
     return NextResponse.json(
-      { error: "Failed to create product" },
+      { success: false, error: "Failed to create product" },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/products/admin - Update existing product
+// PUT /api/products/admin
 export async function PUT(request: NextRequest) {
+  const log = logger.child({ handler: "products:admin:update" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
 
-    // Check admin authentication
     const authResult = await checkAdminAuth(request);
     if (authResult instanceof NextResponse) {
-      return authResult; // Return error response if auth failed
+      return authResult;
     }
 
-    logger.info("PUT request received for product update");
     const formData = await request.formData();
-
-    // Extract form fields
     const productId = formData.get("productId") as string;
     const name = sanitizeName(formData.get("name"));
     const description = String(formData.get("description") || "").trim();
@@ -257,22 +240,18 @@ export async function PUT(request: NextRequest) {
     const sizes = normalizeStringList(formData.get("sizes"));
     const colors = normalizeStringList(formData.get("colors"));
 
-    // Parse sizeStock from JSON string for PUT request
     const sizeStockString = formData.get("sizeStock") as string;
     let sizeStockData: Record<string, unknown> = {};
-
     try {
       sizeStockData = sizeStockString ? JSON.parse(sizeStockString) : {};
     } catch {
       return NextResponse.json(
-        { error: "Invalid stock data format" },
+        { success: false, error: "Invalid stock data format" },
         { status: 400 }
       );
     }
 
     const stock: { [size: string]: number } = {};
-
-    // Convert string values to numbers and ensure all sizes have stock
     sizes.forEach((size) => {
       const rawValue = sizeStockData[size];
       const parsedValue = Number.parseInt(String(rawValue ?? "0"), 10);
@@ -289,12 +268,11 @@ export async function PUT(request: NextRequest) {
       (Number.isNaN(originalPrice) || originalPrice < 0)
     ) {
       return NextResponse.json(
-        { error: "Original price must be a valid non-negative number" },
+        { success: false, error: "Original price must be a valid non-negative number" },
         { status: 400 }
       );
     }
 
-    // Validate required fields
     if (
       !productId ||
       !name ||
@@ -304,30 +282,22 @@ export async function PUT(request: NextRequest) {
       !category.length ||
       !sizes.length
     ) {
-      logger.error("Validation failed:", {
-        productId: !!productId,
-        name: !!name,
-        description: !!description,
-        price: !Number.isNaN(price) && price > 0,
-        category: !!category.length,
-        sizesLength: sizes.length,
-      });
       return NextResponse.json(
-        { error: "Missing required fields or invalid data" },
+        { success: false, error: "Missing required fields or invalid data" },
         { status: 400 }
       );
     }
 
-    // Find existing product
     const existingProduct = await findProductById(productId);
     if (!existingProduct) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Product not found" },
+        { status: 404 }
+      );
     }
 
-    // Generate new slug if name changed
     const slug = createSlug(name);
 
-    // Check if new slug conflicts with another product
     if (slug !== existingProduct.slug) {
       const conflictingProduct = await findProductBySlug(slug);
       if (
@@ -335,7 +305,7 @@ export async function PUT(request: NextRequest) {
         conflictingProduct._id.toString() !== existingProduct._id.toString()
       ) {
         return NextResponse.json(
-          { error: "A product with this name already exists" },
+          { success: false, error: "A product with this name already exists" },
           { status: 400 }
         );
       }
@@ -343,10 +313,8 @@ export async function PUT(request: NextRequest) {
 
     let imageUrls = existingProduct.images;
 
-    // Handle image updates
     if (!keepExistingImages) {
       const newImageFiles = formData.getAll("newImages") as File[];
-
       const validNewImageFiles = (newImageFiles || []).filter(
         (file) => file && file.size > 0
       );
@@ -354,7 +322,7 @@ export async function PUT(request: NextRequest) {
       const imageValidation = validateImageFiles(validNewImageFiles);
       if (!imageValidation.valid && hostedImageUrls.length === 0) {
         return NextResponse.json(
-          { error: imageValidation.error || "Invalid images" },
+          { success: false, error: imageValidation.error || "Invalid images" },
           { status: 400 }
         );
       }
@@ -362,43 +330,38 @@ export async function PUT(request: NextRequest) {
       if (hostedImageUrls.length > 0) {
         if (!validateImageUrls(hostedImageUrls)) {
           return NextResponse.json(
-            { error: "Invalid hosted image URLs" },
+            { success: false, error: "Invalid hosted image URLs" },
             { status: 400 }
           );
         }
-
         imageUrls = hostedImageUrls;
       } else if (validNewImageFiles.length > 0) {
-        // Delete old images from Cloudinary
         for (const oldImageUrl of existingProduct.images) {
           try {
             const publicId = getPublicIdFromUrl(oldImageUrl);
             await deleteImage(publicId);
           } catch (error) {
-            logger.warn("Failed to delete old image:", error);
+            log.warn({ err: error }, "Failed to delete old image");
           }
         }
 
-        // Upload new images
         imageUrls = [];
         for (const file of validNewImageFiles) {
           const buffer = Buffer.from(await file.arrayBuffer());
-          const result = (await uploadImage(buffer, "tshirt-products")) as any;
+          const result = (await uploadImage(buffer, "tshirt-products")) as { secure_url: string };
           imageUrls.push(result.secure_url);
         }
       }
     } else if (hostedImageUrls.length > 0) {
       if (!validateImageUrls(hostedImageUrls)) {
         return NextResponse.json(
-          { error: "Invalid hosted image URLs" },
+          { success: false, error: "Invalid hosted image URLs" },
           { status: 400 }
         );
       }
-
       imageUrls = hostedImageUrls;
     }
 
-    // Update product
     const updatedProduct = await updateProductById(productId, {
       name,
       slug,
@@ -410,29 +373,39 @@ export async function PUT(request: NextRequest) {
       tags,
       sizes,
       colors,
-      stock,
       isFeatured,
       isActive,
     });
 
     if (!updatedProduct) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Product not found" },
+        { status: 404 }
+      );
     }
 
+    await updateProductStockById(productId, stock);
+
+    log.info({ productId }, "Product updated");
+
     return NextResponse.json(
-      { message: "Product updated successfully", product: updatedProduct },
-      { status: 200 }
+      {
+        success: true,
+        message: "Product updated successfully",
+        data: { product: updatedProduct },
+      }
     );
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
-    logger.error("Error updating product:", error);
+    log.error({ err: error }, "Error updating product");
     return NextResponse.json(
       {
+        success: false,
         error: `Failed to update product: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
@@ -442,20 +415,20 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/products/admin - Delete product
+// DELETE /api/products/admin
 export async function DELETE(request: NextRequest) {
+  const log = logger.child({ handler: "products:admin:delete" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
 
-    // Check admin authentication
     const authResult = await checkAdminAuth(request);
     if (authResult instanceof NextResponse) {
-      return authResult; // Return error response if auth failed
+      return authResult;
     }
 
     const { searchParams } = new URL(request.url);
@@ -463,46 +436,51 @@ export async function DELETE(request: NextRequest) {
 
     if (!productId) {
       return NextResponse.json(
-        { error: "Product ID is required" },
+        { success: false, error: "Product ID is required" },
         { status: 400 }
       );
     }
 
-    // Find and delete product
     const product = await findProductById(productId);
     if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Product not found" },
+        { status: 404 }
+      );
     }
 
-    // Delete images from Cloudinary
     for (const imageUrl of product.images) {
       try {
         const publicId = getPublicIdFromUrl(imageUrl);
         await deleteImage(publicId);
       } catch (error) {
-        logger.warn("Failed to delete image:", error);
+        log.warn({ err: error }, "Failed to delete image");
       }
     }
 
     const deleted = await deleteProductById(productId);
     if (!deleted) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Product not found" },
+        { status: 404 }
+      );
     }
 
+    log.info({ productId }, "Product deleted");
+
     return NextResponse.json(
-      { message: "Product deleted successfully" },
-      { status: 200 }
+      { success: true, message: "Product deleted successfully" }
     );
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Supabase is not configured" },
+        { success: false, error: "Supabase is not configured" },
         { status: 503 }
       );
     }
-    logger.error("Error deleting product:", error);
+    log.error({ err: error }, "Error deleting product");
     return NextResponse.json(
-      { error: "Failed to delete product" },
+      { success: false, error: "Failed to delete product" },
       { status: 500 }
     );
   }

@@ -10,6 +10,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const log = logger.child({ handler: "profile:get" });
   try {
     const auth = await requireAuthenticatedUser(request);
     if (auth.error) {
@@ -17,8 +18,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isSupabaseConfigured()) {
-      return NextResponse.json(
-        {
+      return NextResponse.json({
+        success: true,
+        data: {
           profile: {
             name: auth.user.name,
             email: auth.user.email,
@@ -26,32 +28,36 @@ export async function GET(request: NextRequest) {
             lastAddress: null,
           },
         },
-        { status: 200 }
-      );
+      });
     }
 
     const orders = await findOrdersByUserId(auth.user._id.toString());
     const latestAddress = orders[0]?.address || null;
 
+    log.info({ userId: auth.user._id.toString() }, "Profile fetched");
+
     return NextResponse.json({
-      profile: {
-        name: auth.user.name,
-        email: auth.user.email,
-        phone: latestAddress?.phone || null,
-        lastAddress: latestAddress,
+      success: true,
+      data: {
+        profile: {
+          name: auth.user.name,
+          email: auth.user.email,
+          phone: latestAddress?.phone || null,
+          lastAddress: latestAddress,
+        },
       },
     });
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Profile service is temporarily unavailable" },
+        { success: false, error: "Profile service is temporarily unavailable" },
         { status: 503 }
       );
     }
 
-    logger.error("Error fetching profile:", error);
+    log.error({ err: error }, "Error fetching profile");
     return NextResponse.json(
-      { error: "Failed to fetch profile" },
+      { success: false, error: "Failed to fetch profile" },
       { status: 500 }
     );
   }

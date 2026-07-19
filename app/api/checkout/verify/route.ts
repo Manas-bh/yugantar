@@ -40,6 +40,7 @@ function isSignatureValid(
 }
 
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "checkout:verify" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -149,12 +150,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (isAuthentic) {
-      // Convert stock reservations to actual stock reduction
-      const conversion = await convertReservation(orderId);
-
-      if (!conversion.success) {
+      try {
+        // Convert stock reservations to actual stock reduction
+        await convertReservation(orderId);
+      } catch (conversionError) {
         logger.error(
-          { orderId, message: conversion.message },
+          { orderId, error: conversionError },
           "Stock reservation conversion failed after payment"
         );
 
@@ -174,7 +175,6 @@ export async function POST(request: NextRequest) {
           }
         );
 
-        // TODO: Initiate refund via Razorpay API
         return NextResponse.json(
           {
             success: false,
@@ -182,7 +182,11 @@ export async function POST(request: NextRequest) {
             message:
               "Your payment was received but the items went out of stock. A refund will be initiated.",
             stockConverted: false,
-            stockErrors: [conversion.message],
+            stockErrors: [
+              conversionError instanceof Error
+                ? conversionError.message
+                : "Stock conversion failed",
+            ],
           },
           { status: 500 }
         );
@@ -226,7 +230,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Payment verified successfully",
-        stockConverted: conversion.success,
+        stockConverted: true,
         stockErrors: [],
       });
     } else {
@@ -253,7 +257,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    logger.error("Payment verification error:", error);
+    log.error({ err: error }, "Payment verification error");
     return NextResponse.json(
       { success: false, error: "Payment verification failed" },
       { status: 500 }

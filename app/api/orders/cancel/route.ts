@@ -14,6 +14,7 @@ import {
 } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "orders:cancel" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    logger.error("Order cancellation error:", error);
+    log.error({ err: error }, "Order cancellation error");
     return NextResponse.json(
       { success: false, error: "Failed to cancel order" },
       { status: 500 }

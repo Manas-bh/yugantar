@@ -40,6 +40,7 @@ function hasValidAddress(address: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "checkout:create" });
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json(
@@ -203,7 +204,7 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-    logger.error("Razorpay order creation error:", error);
+    log.error({ err: error }, "Razorpay order creation error");
     return NextResponse.json(
       { success: false, error: "Failed to create order" },
       { status: 500 }

@@ -142,7 +142,6 @@ export async function POST(request: Request) {
             { orderId: internalOrder.orderId, errors: stockReduction.errors },
             "Stock reduction failed after payment"
           );
-          // TODO: initiate refund via Razorpay API
           return NextResponse.json(
             { success: false, error: "Stock reduction failed" },
             { status: 500 }

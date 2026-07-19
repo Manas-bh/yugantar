@@ -17,6 +17,7 @@ function getClientIp(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+  const log = logger.child({ handler: "auth:register:start" });
   try {
     const { email, password, name } = await request.json();
     const normalizedEmail = sanitizeEmail(email);
@@ -24,14 +25,21 @@ export async function POST(request: NextRequest) {
     const rawPassword = String(password || "");
     const clientIp = getClientIp(request);
 
+    log.info({ clientIp, email: normalizedEmail }, "Register start attempt");
+
     const startRateLimit = await checkRateLimit(`auth:register:start:${clientIp}:${normalizedEmail}`, {
       limit: 5,
       windowMs: 15 * 60 * 1000,
     });
 
     if (!startRateLimit.allowed) {
+      log.warn({ clientIp, email: normalizedEmail }, "Rate limit hit for register start");
       return NextResponse.json(
-        { error: "Too many signup attempts. Please try again later." },
+        {
+          success: false,
+          error: "Too many signup attempts. Please try again later.",
+          code: "RATE_LIMITED",
+        },
         {
           status: 429,
           headers: {
@@ -43,27 +51,29 @@ export async function POST(request: NextRequest) {
 
     if (!normalizedEmail || !normalizedName || !rawPassword) {
       return NextResponse.json(
-        { error: "Email, password, and name are required" },
+        { success: false, error: "Email, password, and name are required" },
         { status: 400 }
       );
     }
 
     if (!isValidEmail(normalizedEmail)) {
-      return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
-    }
-
-    if (rawPassword.length < 8) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters long" },
+        { success: false, error: "Invalid email format" },
         { status: 400 }
       );
     }
 
-    // Enforce password complexity: at least one uppercase, one lowercase, one digit, one special character
+    if (rawPassword.length < 8) {
+      return NextResponse.json(
+        { success: false, error: "Password must be at least 8 characters long" },
+        { status: 400 }
+      );
+    }
+
     const passwordComplexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~])/;
     if (!passwordComplexityRegex.test(rawPassword)) {
       return NextResponse.json(
-        { error: "Password must include uppercase, lowercase, number, and special character" },
+        { success: false, error: "Password must include uppercase, lowercase, number, and special character" },
         { status: 400 }
       );
     }
@@ -71,7 +81,7 @@ export async function POST(request: NextRequest) {
     const existingUser = await getUserByEmail(normalizedEmail);
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
+        { success: false, error: "User with this email already exists" },
         { status: 409 }
       );
     }
@@ -96,6 +106,8 @@ export async function POST(request: NextRequest) {
       expiresInMinutes: OTP_EXPIRY_MINUTES,
     });
 
+    log.info({ email: normalizedEmail }, "OTP sent for registration");
+
     return NextResponse.json({
       success: true,
       message: "OTP sent to your email",
@@ -104,14 +116,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
       return NextResponse.json(
-        { error: "Authentication service is temporarily unavailable" },
+        { success: false, error: "Authentication service is temporarily unavailable" },
         { status: 503 }
       );
     }
 
-    logger.error("Register start error:", error);
+    log.error({ err: error }, "Register start error");
     return NextResponse.json(
-      { error: "Internal server error" },
+      { success: false, error: "Internal server error" },
       { status: 500 }
     );
   }

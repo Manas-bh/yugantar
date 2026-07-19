@@ -13,15 +13,18 @@ import {
 
 export const dynamic = "force-dynamic";
 
-// GET /api/products - Get all products with optional filtering
 export async function GET(request: NextRequest) {
+  const log = logger.child({ handler: "products:get" });
   try {
     if (!isSupabaseConfigured()) {
-      if (new URL(request.url).searchParams.get("slug")) {
-        return NextResponse.json({ product: null }, { status: 404 });
+      const slug = new URL(request.url).searchParams.get("slug");
+      if (slug) {
+        return NextResponse.json(
+          { success: false, error: "Product not found" },
+          { status: 404 }
+        );
       }
-
-      return NextResponse.json({ products: [], total: 0, page: 1, limit: 0 });
+      return NextResponse.json({ success: true, data: { products: [], total: 0, page: 1, limit: 0 } });
     }
 
     const { searchParams } = new URL(request.url);
@@ -55,60 +58,65 @@ export async function GET(request: NextRequest) {
         ? isActive === "true"
         : true;
 
-    const products = slug
-      ? []
-      : await listProducts({
-          category: category || undefined,
-          isFeatured: isFeaturedFilter,
-          isActive: isActiveFilter,
-          limit: hasValidLimit ? parsedLimit : undefined,
-          page: hasValidPage ? parsedPage : undefined,
-        });
-
     if (slug) {
       const single = await findProductBySlug(slug);
+      log.info({ slug, found: !!single }, "Product lookup by slug");
       return NextResponse.json(
-        { product: single },
+        { success: true, data: { product: single } },
         {
           status: single ? 200 : 404,
           headers: {
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-            Pragma: "no-cache",
-            Expires: "0",
+            "Pragma": "no-cache",
+            "Expires": "0",
           },
         }
       );
     }
 
-    // Get total count for pagination
+    const products = await listProducts({
+      category: category || undefined,
+      isFeatured: isFeaturedFilter,
+      isActive: isActiveFilter,
+      limit: hasValidLimit ? parsedLimit : undefined,
+      page: hasValidPage ? parsedPage : undefined,
+    });
+
     const total = await countProducts({
       category: category || undefined,
       isFeatured: isFeaturedFilter,
       isActive: isActiveFilter,
     });
 
+    log.info({ count: products.length, total }, "Products fetched");
+
     return NextResponse.json(
       {
-        products,
-        total,
-        page: hasValidPage ? parsedPage : 1,
-        limit: hasValidLimit ? parsedLimit : products.length,
+        success: true,
+        data: {
+          products,
+          total,
+          page: hasValidPage ? parsedPage : 1,
+          limit: hasValidLimit ? parsedLimit : products.length,
+        },
       },
       {
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-          Pragma: "no-cache",
-          Expires: "0",
+          "Pragma": "no-cache",
+          "Expires": "0",
         },
       }
     );
   } catch (error) {
     if (error instanceof SupabaseConfigError) {
-      return NextResponse.json({ products: [], total: 0, page: 1, limit: 0 });
+      return NextResponse.json(
+        { success: true, data: { products: [], total: 0, page: 1, limit: 0 } }
+      );
     }
-    logger.error("Error fetching products:", error);
+    log.error({ err: error }, "Error fetching products");
     return NextResponse.json(
-      { error: "Failed to fetch products" },
+      { success: false, error: "Failed to fetch products" },
       { status: 500 }
     );
   }
