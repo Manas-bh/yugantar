@@ -18,12 +18,7 @@ const STATIC_ROUTES: Array<{
   { path: "/contact", changefreq: "monthly", priority: "0.5" },
   { path: "/shipping", changefreq: "monthly", priority: "0.5" },
   { path: "/tshirt-brands-india", changefreq: "weekly", priority: "0.7" },
-  { path: "/oversized-tshirts-india", changefreq: "weekly", priority: "0.7" },
-  { path: "/anime-tshirts-india", changefreq: "weekly", priority: "0.7" },
   { path: "/custom-tshirt-printing-india", changefreq: "weekly", priority: "0.7" },
-  { path: "/graphic-tshirts-india", changefreq: "weekly", priority: "0.7" },
-  { path: "/streetwear-tshirts-india", changefreq: "weekly", priority: "0.7" },
-  { path: "/funny-meme-tshirts-india", changefreq: "weekly", priority: "0.7" },
   { path: "/llms.txt", changefreq: "weekly", priority: "0.4" },
 ];
 

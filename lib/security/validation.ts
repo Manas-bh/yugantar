@@ -13,12 +13,7 @@ const DEFAULT_ALLOWED_CALLBACK_PREFIXES = [
   "/faq",
   "/shipping",
   "/tshirt-brands-india",
-  "/oversized-tshirts-india",
-  "/anime-tshirts-india",
   "/custom-tshirt-printing-india",
-  "/graphic-tshirts-india",
-  "/streetwear-tshirts-india",
-  "/funny-meme-tshirts-india",
 ];
 
 const CALLBACK_URL_MAX_LENGTH = 500;

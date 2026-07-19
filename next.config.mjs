@@ -6,6 +6,33 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  redirects: async () => [
+    {
+      source: "/anime-tshirts-india",
+      destination: "/anime",
+      permanent: true,
+    },
+    {
+      source: "/funny-meme-tshirts-india",
+      destination: "/meme",
+      permanent: true,
+    },
+    {
+      source: "/graphic-tshirts-india",
+      destination: "/collections",
+      permanent: true,
+    },
+    {
+      source: "/oversized-tshirts-india",
+      destination: "/collections",
+      permanent: true,
+    },
+    {
+      source: "/streetwear-tshirts-india",
+      destination: "/collections",
+      permanent: true,
+    },
+  ],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

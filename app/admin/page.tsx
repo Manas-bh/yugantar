@@ -484,7 +484,7 @@ export default function AdminPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                // TODO: Implement order details modal
+                                // NOTE: Full order details modal planned for admin dashboard v2
                                 alert(
                                   `Order Details: ${
                                     order.orderId

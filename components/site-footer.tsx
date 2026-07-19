@@ -55,28 +55,28 @@ export function SiteFooter() {
             <h4 className="text-sm font-bold uppercase tracking-[0.12em] text-foreground">Explore</h4>
             <div className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
               <Link
-                href="/oversized-tshirts-india"
+                href="/collections"
                 className="transition-colors hover:text-primary"
               >
-                Oversized
+                Collections
               </Link>
               <Link
-                href="/anime-tshirts-india"
+                href="/anime"
                 className="transition-colors hover:text-primary"
               >
                 Anime Tees
               </Link>
               <Link
-                href="/graphic-tshirts-india"
+                href="/meme"
                 className="transition-colors hover:text-primary"
               >
-                Graphic Tees
+                Meme Tees
               </Link>
               <Link
-                href="/streetwear-tshirts-india"
+                href="/custom"
                 className="transition-colors hover:text-primary"
               >
-                Streetwear
+                Custom Prints
               </Link>
             </div>
           </div>
